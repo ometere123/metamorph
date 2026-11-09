@@ -1,0 +1,13 @@
+node_modules/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+!.env.example
+coverage/
+.coverage
+dist/
+artifacts/
+*.zip
