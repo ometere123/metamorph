@@ -1,0 +1,19 @@
+{
+  "name": "genlayer-metamorph",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Metamorphic testing primitive for GenLayer Intelligent Contracts (StudioNet 61999)",
+  "scripts": {
+    "genlayer": "genlayer",
+    "genlayer:version": "genlayer --version",
+    "test:offline": "python -m pytest tests/offline -q",
+    "test:direct": "python -m pytest tests/direct -q",
+    "check:network": "node scripts/guard-network.mjs"
+  },
+  "devDependencies": {
+    "genlayer": "0.39.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "network": "studionet",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "explorer": "https://genlayer-explorer.vercel.app"
+}

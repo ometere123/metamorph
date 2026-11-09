@@ -1,0 +1,3 @@
+pytest>=8.0,<10
+genlayer-test==0.29.0
+genvm-linter==0.11.0
