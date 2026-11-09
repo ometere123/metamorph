@@ -9,7 +9,7 @@ As of the initial repository build, the status is deliberately conservative. The
 | GenVM linter | Verified locally | 3/3 contract files accepted; contract method schemas generated |
 | Pure invariant + security tests | Verified locally | 29 offline checks passed |
 | Direct Mode | Verified locally | 15 actual GenVM Direct Mode scenarios passed, v0.2.12 |
-| CI | Pending workflow execution | Link to first successful GitHub Actions run after push |
+| CI | **PASS — verified on a fresh GitHub runner** | [GitHub Actions run 42718594748](https://github.com/ometere123/metamorph/actions/runs/42718594748): repository CLI/network guard, GenVM lint, and 44 offline + Direct Mode tests passed |
 | StudioNet production registry deployment | **NOT YET PROVEN** | No local funded CLI account available in build environment |
 | StudioNet consensus lifecycle | **NOT YET PROVEN** | No tx hashes available |
 | StudioNet consumer proof | **NOT YET PROVEN** | Direct Mode consumer test is not network-level proof |
