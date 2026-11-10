@@ -59,6 +59,7 @@ def test_semantic_decision_valid_shapes(module, raw):
     {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "original.years"]},
     {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "variant.missing"]},
     {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "original.extra"]},
+    {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "variant.other"]},
     {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": []},
     {"relation": "VALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "variant.years"], "injected": 1},
 ])

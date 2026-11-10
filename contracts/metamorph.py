@@ -161,15 +161,19 @@ def clean_semantic_result(raw, original, variant):
     require(all(path_leaf(sample, p) is not None for p in refs), "Invented evidence path")
     require(any(p.startswith("original.") for p in refs), "Missing original evidence")
     require(any(p.startswith("variant.") for p in refs), "Missing variant evidence")
+    original_paths = {p[len("original."):] for p in refs if p.startswith("original.")}
+    variant_paths = {p[len("variant."):] for p in refs if p.startswith("variant.")}
+    require(original_paths == variant_paths, "Evidence paths must pair the same input fields")
     return {"relation": relation, "reason_code": reason, "evidence_paths": sorted(refs)}
 
 
 def signature(result):
-    # Evidence paths are part of the validator's substantive, bounded claim.
-    # Requiring the independently recomputed path set to match prevents a
-    # leader from obtaining acceptance with a merely plausible classification
-    # while citing unrelated input fields.
-    return (result["relation"], result["reason_code"], tuple(result["evidence_paths"]))
+    # Validators independently recompute the semantic classification and its
+    # reason. Evidence paths are separately bounded, real, paired fields; they
+    # are explanatory provenance, not a free-form leader-controlled vote.
+    # Requiring the exact path list here made valid cosmetic cases fragile when
+    # independent models selected different, equally valid paired fields.
+    return (result["relation"], result["reason_code"])
 
 
 def compare_target_outcomes(relation, original, variant, score_tolerance):

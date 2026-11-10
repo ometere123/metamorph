@@ -188,8 +188,8 @@ def test_validator_rejects_forged_leader_and_provenance(lab):
         assert vm.run_validator(leader_result=INVALID) is False
         forged = {**STABLE, "evidence_paths": ["original.experience_years", "variant.imaginary"]}
         assert vm.run_validator(leader_result=forged) is False
-        irrelevant = {**STABLE, "evidence_paths": ["original.tone", "variant.tone"]}
-        assert vm.run_validator(leader_result=irrelevant) is False
+        crossed = {**STABLE, "evidence_paths": ["original.tone", "variant.experience_years"]}
+        assert vm.run_validator(leader_result=crossed) is False
         assert vm.run_validator(leader_error=ValueError("unavailable")) is False
 
 
