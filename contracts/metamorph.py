@@ -11,6 +11,7 @@ attestation. All target views run outside nondeterministic execution.
 from genlayer import *
 import hashlib
 import json
+import math
 
 
 SCHEMA = "metamorph.adapter/1"
@@ -28,6 +29,10 @@ MAX_POLICY = 1400
 MAX_CASE_NOTE = 600
 MAX_TARGET_OUTPUT = 1000
 MAX_SCORE_DELTA = 1000
+MAX_JSON_DEPTH = 8
+MAX_JSON_NODES = 128
+MAX_JSON_LIST_ITEMS = 30
+ZERO_ADDRESS = "0x" + ("0" * 40)
 
 
 def canonical(value):
@@ -58,8 +63,27 @@ def object_json(value, label, limit):
                 raise ValueError("Duplicate JSON key")
             result[key] = item
         return result
+    def parse_constant(token):
+        raise ValueError("Non-finite JSON number")
+    def inspect_shape(item, depth=0, nodes=0):
+        require(depth <= MAX_JSON_DEPTH, "JSON nesting too deep")
+        nodes += 1
+        require(nodes <= MAX_JSON_NODES, "JSON object too complex")
+        if isinstance(item, dict):
+            require(len(item) <= MAX_JSON_LIST_ITEMS, "JSON object too large")
+            for key, child in item.items():
+                require(isinstance(key, str) and 0 < len(key) <= 80, "Invalid JSON key")
+                nodes = inspect_shape(child, depth + 1, nodes)
+        elif isinstance(item, list):
+            require(len(item) <= MAX_JSON_LIST_ITEMS, "JSON list too large")
+            for child in item:
+                nodes = inspect_shape(child, depth + 1, nodes)
+        elif isinstance(item, float):
+            require(math.isfinite(item), "Non-finite JSON number")
+        return nodes
     try:
-        decoded = json.loads(value, object_pairs_hook=unique_pairs)
+        decoded = json.loads(value, object_pairs_hook=unique_pairs, parse_constant=parse_constant)
+        inspect_shape(decoded)
     except Exception:
         raise gl.vm.UserError("Malformed " + label)
     require(isinstance(decoded, dict) and 1 <= len(decoded) <= 30, "Invalid " + label + " object")
@@ -68,8 +92,9 @@ def object_json(value, label, limit):
 
 
 def addr_text(value):
-    raw = str(value).lower()
+    raw = ("0x" + value.hex()) if isinstance(value, bytes) else str(value).lower()
     require(raw.startswith("0x") and len(raw) == 42 and all(c in "0123456789abcdef" for c in raw[2:]), "Invalid address")
+    require(raw != ZERO_ADDRESS, "Zero address is not allowed")
     return raw
 
 
@@ -140,7 +165,11 @@ def clean_semantic_result(raw, original, variant):
 
 
 def signature(result):
-    return (result["relation"], result["reason_code"])
+    # Evidence paths are part of the validator's substantive, bounded claim.
+    # Requiring the independently recomputed path set to match prevents a
+    # leader from obtaining acceptance with a merely plausible classification
+    # while citing unrelated input fields.
+    return (result["relation"], result["reason_code"], tuple(result["evidence_paths"]))
 
 
 def compare_target_outcomes(relation, original, variant, score_tolerance):
@@ -180,8 +209,11 @@ def semantic_prompt(policy, case, snapshot):
         "Return EXACT JSON with keys relation, reason_code, evidence_paths. "
         "relation: VALID, INVALID, AMBIGUOUS. reason_code MUST be RELATION_SATISFIED, MATERIAL_DIFFERENCE, "
         "or INSUFFICIENT_BASIS respectively. evidence_paths: 2-8 distinct existing scalar dot paths such as "
-        "original.age and variant.age, including at least one from each input. "
-        "No prose, no other keys. Frozen case:\n" + canonical(evidence)
+        "original.age and variant.age, including at least one from each input. Use the lexicographically sorted "
+        "smallest set that supports the classification; when one changed or relevant scalar is sufficient, use its "
+        "original and variant paths and do not add unrelated paths. "
+        "No prose, no other keys. BEGIN UNTRUSTED FROZEN CASE JSON\n" + canonical(evidence) +
+        "\nEND UNTRUSTED FROZEN CASE JSON"
     )
 
 
@@ -213,10 +245,11 @@ class Metamorph(gl.Contract):
     @gl.public.write
     def register_target(self, target_address: Address, label: str) -> str:
         label = bounded(label, 90, "target label")
+        target_text = addr_text(target_address)
         actual = external_manifest(gl.get_contract_at(target_address).view().get_metamorph_manifest())
         self.target_count += u64(1)
         ident = tag("T", self.target_count)
-        self.targets[ident] = canonical({"id": ident, "address": addr_text(target_address),
+        self.targets[ident] = canonical({"id": ident, "address": target_text,
                                         "label": label, "version": actual["version"], "registrant": sender()})
         return ident
 
@@ -289,7 +322,8 @@ class Metamorph(gl.Contract):
         if parent_run_id:
             require(bool(self.runs.get(parent_run_id, "")), "Parent run missing")
             old = json.loads(self.runs[parent_run_id])
-            require(old["state"] == "CLOSED" and old["suite_id"] == suite_id, "Invalid prior run")
+            require(old["state"] == "CLOSED" and old["suite_id"] == suite_id and
+                    old["target_id"] == suite["target_id"], "Invalid prior run")
             require(old["tester"] != actor, "Recheck requires a different tester")
         self.run_count += u64(1)
         ident = tag("R", self.run_count)
@@ -334,11 +368,18 @@ class Metamorph(gl.Contract):
         location = run_id + "/" + case_id
         require(not self.verdicts.get(location, ""), "Case already evaluated")
         require(bool(self.snapshots.get(location, "")), "Case must be captured first")
+        require(bool(self.cases.get(case_id, "")), "Unknown case")
         snapshot = json.loads(self.snapshots[location])
         case = json.loads(self.cases[case_id])
         suite = json.loads(self.suites[run["suite_id"]])
         require(case["suite_id"] == suite["id"] and case["id"] in suite["case_ids"], "Case binding mismatch")
-        require(snapshot["suite_digest"] == run["suite_digest"] and snapshot["case_digest"] == digest(case),
+        target = json.loads(self.targets[run["target_id"]])
+        require(snapshot["run_id"] == run_id and snapshot["case_id"] == case_id and
+                snapshot["target_id"] == run["target_id"] and
+                snapshot["target_address"] == target["address"] and
+                snapshot["target_version"] == run["target_version"] and
+                snapshot["suite_digest"] == run["suite_digest"] and
+                snapshot["case_digest"] == digest(case),
                 "Snapshot binding mismatch")
         instruction = semantic_prompt(suite["policy"], case, snapshot)
         original_input = case["original"]
@@ -415,8 +456,15 @@ class Metamorph(gl.Contract):
         if not suite_raw:
             return False
         suite = json.loads(suite_raw)
-        return bool(suite["frozen"] and suite["digest"] == expected_suite_digest and
-                    run["pass"] == len(suite["case_ids"]) and len(suite["case_ids"]) >= 2)
+        if not suite["frozen"] or suite["digest"] != expected_suite_digest or len(suite["case_ids"]) < 2:
+            return False
+        if run["pass"] != len(suite["case_ids"]):
+            return False
+        for case_id in suite["case_ids"]:
+            verdict_raw = self.verdicts.get(run_id + "/" + case_id, "")
+            if not verdict_raw or json.loads(verdict_raw)["outcome"] != "PASS":
+                return False
+        return True
 
     @gl.public.view
     def is_certified_current(self, run_id: str, suite_id: str, target_id: str, expected_suite_digest: str) -> bool:

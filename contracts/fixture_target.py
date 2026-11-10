@@ -27,7 +27,7 @@ class MetamorphTargetFixture(gl.Contract):
         years = obj.get("experience_years", 0)
         if type(years) is not int or not 0 <= years <= 25:
             raise gl.vm.UserError("Invalid experience_years")
-        score = 2000 + (years * 500) + (2000 if verified else 0)
+        score = min(10000, 2000 + (years * 500) + (2000 if verified else 0))
         if self.inconsistent and obj.get("tone") == "urgent":
             # A cosmetic field should NOT change the decision, but here it does.
             score = 0

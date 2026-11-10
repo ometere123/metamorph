@@ -75,6 +75,23 @@ def test_rejects_malformed_input_or_empty_object(module, body):
         module.object_json(body, "test", 100)
 
 
+@pytest.mark.parametrize("body", [
+    '{"a":NaN}',
+    '{"a":Infinity}',
+    '{"a":-Infinity}',
+    '{"a":{"b":{"c":{"d":{"e":{"f":{"g":{"h":{"i":1}}}}}}}}}',
+    '{"a":[' + ','.join(str(i) for i in range(31)) + ']}',
+])
+def test_rejects_nonfinite_or_overcomplex_json(module, body):
+    with pytest.raises(Exception):
+        module.object_json(body, "test", 1800)
+
+
+def test_rejects_zero_address(module):
+    with pytest.raises(Exception):
+        module.addr_text("0x" + "0" * 40)
+
+
 def test_target_output_is_strict_and_bounded(module):
     assert module.target_result('{"decision":"ALLOW","score_bps":9000}') == {"decision":"ALLOW","score_bps":9000}
     for bad in ['{"decision":"ALLOW","score_bps":true}', '{"decision":"PASS","score_bps":1}',
@@ -90,6 +107,8 @@ def test_prompts_never_include_target_outputs(module):
     assert 'original_output' not in prompt
     assert '9000' not in prompt
     assert 'untrusted data' in prompt
+    assert 'BEGIN UNTRUSTED FROZEN CASE JSON' in prompt
+    assert 'END UNTRUSTED FROZEN CASE JSON' in prompt
 
 
 def test_repository_network_is_exactly_61999():

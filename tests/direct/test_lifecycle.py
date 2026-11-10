@@ -188,6 +188,8 @@ def test_validator_rejects_forged_leader_and_provenance(lab):
         assert vm.run_validator(leader_result=INVALID) is False
         forged = {**STABLE, "evidence_paths": ["original.experience_years", "variant.imaginary"]}
         assert vm.run_validator(leader_result=forged) is False
+        irrelevant = {**STABLE, "evidence_paths": ["original.tone", "variant.tone"]}
+        assert vm.run_validator(leader_result=irrelevant) is False
         assert vm.run_validator(leader_error=ValueError("unavailable")) is False
 
 
@@ -218,7 +220,7 @@ def test_deployed_target_fixture_exposes_cosmetic_defect(inconsistent, expected)
 def test_actual_consumer_contract_requires_exact_certification(monkeypatch, certified):
     vm = VMContext()
     with vm.activate():
-        registry_addr = "0x" + "d" * 40
+        registry_addr = create_address("registry")
         consumer = deploy_contract(CONSUMER, vm, registry_addr, "S-4", "T-8", "a" * 64,
                                    sdk_version="v0.2.12")
 

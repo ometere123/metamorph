@@ -11,10 +11,13 @@ class MetamorphConsumer(gl.Contract):
     activated: bool
     used_run: str
 
-    def __init__(self, registry: str, suite_id: str, target_id: str, suite_digest: str):
-        if not registry.startswith("0x") or len(registry) != 42:
+    def __init__(self, registry: Address, suite_id: str, target_id: str, suite_digest: str):
+        registry_text = ("0x" + registry.hex()) if isinstance(registry, bytes) else str(registry).lower()
+        if (not registry_text.startswith("0x") or len(registry_text) != 42 or
+                any(char not in "0123456789abcdef" for char in registry_text[2:]) or
+                registry_text == "0x" + ("0" * 40)):
             raise gl.vm.UserError("Invalid registry address")
-        self.registry = registry.lower()
+        self.registry = registry_text
         self.suite_id = suite_id
         self.target_id = target_id
         self.suite_digest = suite_digest

@@ -24,6 +24,7 @@ jobs:
         run: |
           npm exec -- genlayer network set studionet
           npm run check:network
+          npm run check:live-network
           npm exec -- genlayer --version
       - name: Install GenLayer test and lint tooling
         run: python -m pip install -r requirements-dev.txt
@@ -31,8 +32,12 @@ jobs:
         run: python -m compileall -q contracts tests
       - name: GenVM lint and ABI validation
         run: |
+          python -m genvm_linter.cli download --version v0.2.12
           python -m genvm_linter.cli check contracts/metamorph.py --json
           python -m genvm_linter.cli check contracts/fixture_target.py --json
           python -m genvm_linter.cli check contracts/fixture_consumer.py --json
+          python -m genvm_linter.cli schema contracts/metamorph.py --json
+          python -m genvm_linter.cli schema contracts/fixture_target.py --json
+          python -m genvm_linter.cli schema contracts/fixture_consumer.py --json
       - name: Offline and GenVM Direct Mode tests
         run: python -m pytest tests -q

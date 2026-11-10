@@ -8,7 +8,8 @@
     "genlayer:version": "genlayer --version",
     "test:offline": "python -m pytest tests/offline -q",
     "test:direct": "python -m pytest tests/direct -q",
-    "check:network": "node scripts/guard-network.mjs"
+    "check:network": "node scripts/guard-network.mjs",
+    "check:live-network": "node scripts/assert_studionet.mjs"
   },
   "devDependencies": {
     "genlayer": "0.39.1"

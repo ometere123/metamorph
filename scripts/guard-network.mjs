@@ -18,10 +18,16 @@ const testConfig = fs.readFileSync(path.join(root, 'gltest.config.yaml'), 'utf8'
 if (!/default:\s*studionet\b/.test(testConfig) || !testConfig.includes(config.rpc)) {
   throw new Error('GenLayer test configuration must target studionet 61999');
 }
-const binary = path.join(root, 'node_modules', '.bin', 'genlayer');
-const version = execFileSync(binary, ['--version'], { encoding: 'utf8' }).trim();
+const binaryCandidates = process.platform === 'win32'
+  ? [path.join(root, 'node_modules', '.bin', 'genlayer.cmd'),
+     path.join(root, 'node_modules', '.bin', 'genlayer')]
+  : [path.join(root, 'node_modules', '.bin', 'genlayer')];
+const binary = binaryCandidates.find((candidate) => fs.existsSync(candidate));
+if (!binary) throw new Error('Repository-local GenLayer CLI executable not found');
+const spawnOptions = { encoding: 'utf8', ...(process.platform === 'win32' ? { shell: true } : {}) };
+const version = execFileSync(binary, ['--version'], spawnOptions).trim();
 if (version !== '0.39.1') throw new Error(`Wrong local CLI: ${version}`);
-const selected = execFileSync(binary, ['network', 'info'], { encoding: 'utf8' });
+const selected = execFileSync(binary, ['network', 'info'], spawnOptions);
 if (!selected.includes("alias: 'studionet'") || !selected.includes("chainId: '61999'") ||
     !selected.includes(`rpc: '${config.rpc}'`)) {
   throw new Error('Selected CLI network is not stable studionet 61999');
