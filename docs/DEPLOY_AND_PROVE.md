@@ -1,105 +1,98 @@
-# StudioNet 61999 — deployment and live proof checklist
+# StudioNet 61999 deployment and proof record
 
-**The exact target is `studionet` / chain ID `61999` / `https://studio.genlayer.com/api`.** This document does not authorize changing networks or reusing the global CLI.
+This is the reproducible deployment record for Metamorph. The required target is always `studionet`, chain `61999` (`0xf22f`), RPC `https://studio.genlayer.com/api`, using the repository-local `genlayer@0.39.1`. Do not substitute `studio-dev`, `studio-next`, chain `61997` or the global CLI.
 
-## 0. Prerequisites and network guard
+## 1. Reproducible preflight
 
-The workstation may have global `genlayer@0.40.0rc2`. Ignore it: these commands use the **repo-local `0.39.1`** binary installed by `npm ci`.
-
-```bash
+```powershell
 npm ci --ignore-scripts --no-audit --no-fund
 python -m pip install -r requirements-dev.txt
 npm exec -- genlayer network set studionet
 npm run check:network
+npm run check:live-network
 npm exec -- genlayer --version
 npm exec -- genlayer network info
 ```
 
-**Stop** unless `network info` prints alias `studionet`, chain ID `61999`, RPC `https://studio.genlayer.com/api`, and the binary prints `0.39.1`.
+`check:network` verifies the repository-local CLI, selected alias and configuration. `check:live-network` sends JSON-RPC `eth_chainId` to the exact required endpoint and requires `0xf22f` / `61999`. A configuration file or alias alone is not sufficient.
 
-The project has no embedded signer. Use only a user-authorized, funded StudioNet wallet already configured in the CLI, or explicitly create and fund disposable wallets with the account owner's permission. Never commit keys, mnemonics, private `.env` files, or CLI account exports.
+The final preflight returned:
 
-Four distinct wallet identities are required:
+```text
+PASS: studionet / chain 61999 / local GenLayer CLI 0.39.1
+PASS: live https://studio.genlayer.com/api eth_chainId=0xf22f (61999)
+```
 
-1. Registrant (registers public target)
-2. Suite curator (owns and freezes a suite)
-3. Case author (authors cases under the curator)
-4. Tester (captures and evaluates a run)
+## 2. Local quality gates
 
-A fifth identity is needed for a recheck. CLI `account use` may be used to switch among authorized wallet identities; document only public addresses.
-
-## 1. Full local validation
-
-```bash
+```powershell
 python -m compileall -q contracts tests
+python -m pytest tests/offline -q
+python -m pytest tests/direct -q
 python -m pytest tests -q
+$env:GENVM_VERSION = 'v0.2.12'
 python -m genvm_linter.cli check contracts/metamorph.py --json
 python -m genvm_linter.cli check contracts/fixture_target.py --json
 python -m genvm_linter.cli check contracts/fixture_consumer.py --json
+python -m genvm_linter.cli schema contracts/metamorph.py --json
+python -m genvm_linter.cli schema contracts/fixture_target.py --json
+python -m genvm_linter.cli schema contracts/fixture_consumer.py --json
 ```
 
-Direct Mode and offline unit tests do not demonstrate multi-validator StudioNet consensus. Their reported outcomes must be labeled as such.
+The final result was 36 offline tests, 15 Direct Mode tests and 51 total tests passed. Linter `0.11.0` accepted all three contracts and all three schema commands succeeded. Direct Mode uses controlled VM-boundary mocks; the multi-contract proof is the live StudioNet evidence below.
 
-## 2. Deploy contracts on 61999
+## 3. Final deployments
 
-CLI `deploy` syntax was checked against the repository-local CLI `0.39.1`:
+All deployment receipts were polled to `FINALIZED` and checked for successful GenVM execution, not merely accepted submission.
 
-```bash
-npm exec -- genlayer deploy --contract contracts/fixture_target.py --rpc https://studio.genlayer.com/api --args false
-npm exec -- genlayer deploy --contract contracts/fixture_target.py --rpc https://studio.genlayer.com/api --args true
-npm exec -- genlayer deploy --contract contracts/metamorph.py --rpc https://studio.genlayer.com/api
-```
+| Artifact | Address | Deployment transaction | Receipt |
+| --- | --- | --- | --- |
+| Stable fixture (`inconsistent=False`) | [`0xE763C5294ea266D2C17106fFd6d5136A6d607C22`](https://explorer-studio.genlayer.com/address/0xE763C5294ea266D2C17106fFd6d5136A6d607C22) | [`0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49`](https://explorer-studio.genlayer.com/tx/0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
+| Defective fixture (`inconsistent=True`) | [`0x286345CcD4A86560e8F97D1Fe2bc140724cfA354`](https://explorer-studio.genlayer.com/address/0x286345CcD4A86560e8F97D1Fe2bc140724cfA354) | [`0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92`](https://explorer-studio.genlayer.com/tx/0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
+| **Metamorph registry** | [`0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b`](https://explorer-studio.genlayer.com/address/0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b) | [`0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8`](https://explorer-studio.genlayer.com/tx/0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
+| Stable-PASS consumer | [`0x94312d8de2282485A939953E93De097FD2acf12e`](https://explorer-studio.genlayer.com/address/0x94312d8de2282485A939953E93De097FD2acf12e) | [`0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0`](https://explorer-studio.genlayer.com/tx/0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
+| FAIL-gate consumer | [`0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b`](https://explorer-studio.genlayer.com/address/0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b) | [`0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed`](https://explorer-studio.genlayer.com/tx/0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
 
-Record the stable target, defective target and registry addresses, deploy tx hashes, wallet addresses, current chain ID and source hashes. Do not invent these values in documentation.
+The registry constructor has no arguments. The consumer constructor was encoded with a typed `CalldataAddress`, the final registry address, and the exact stable or defective suite binding. No plain text address was used for the ABI address parameter.
 
-Check each tx receipt, execution result and deployed source with CLI `receipt`, `schema`, `code`, and explorer; compare deployed source bytes with the repository's exact file. Wait for finalization **and** a successful execution result before calling a deployment complete.
+## 4. Live lifecycle summary
 
-## 3. Live lifecycle
+The final registry recorded stable target `T-1` and defective target `T-2`, then froze:
 
-Using role-separated, funded StudioNet wallets:
+- `S-1` → `T-1`, cases `C-1` equivalent tone change and `C-2` strengthened experience change, digest `299da4c043615d7ef372903d7ff979577e69182e0fbda648a6ac075ee02a6848`.
+- `S-2` → `T-2`, comparable cases `C-3` and `C-4`, digest `88c0efd006eefe4cf14ccfe956b3d8227a86e9a7fd6893b028085260c9556bb7`.
+- `S-3` → `T-1`, two intentionally invalid equivalent claims, digest `a3a39b78bb17eb020bb7e378b0688cd4684eae4b93b4081e618c8f26616b9e3d`.
 
-1. Register the stable and defective target addresses separately via `register_target`.
-2. Create one suite for each registered target. Name an independent author address.
-3. Author at least two frozen cases per suite, preferably:
-   - `EQUIVALENT`: identical verified/experience facts, changed `tone` field.
-   - `STRENGTHENED`: increase `experience_years`, with verification fixed.
-   - `WEAKENED`: decrease `experience_years`, with verification fixed.
-4. Curator freezes both suites and records their exact digest readbacks.
-5. Independent tester opens both runs, captures every case, evaluates every case, then closes the runs.
-6. Verify the stable fixture's exact-bound `PASS` and the defective fixture's `FAIL` on finalised successful executions. Verify `is_certified_current` is true only for the stable suite.
-7. Deploy `contracts/fixture_consumer.py` with arguments: `<registry-address> <stable-suite-id> <stable-target-id> <64-char-suite-digest>`.
-8. Call `activate` using the defective run ID: expect revert/refusal. Call with the valid run ID: expect one irreversible activation. A second attempt should revert.
-9. Demonstrate one invalid/ambiguous input transformation that closes `INCONCLUSIVE` and fails certification.
-10. Demonstrate a recheck opened by a distinct tester; record its independent receipt without mutating the prior run.
+The authoritative transaction-by-transaction table is in [`REVIEWER_EVIDENCE.md`](REVIEWER_EVIDENCE.md).
 
-CLI writes follow the syntax below. Substitute only verified IDs/addresses, and pass JSON arguments as properly quoted strings:
+Observed finalized outcomes:
 
-```bash
-npm exec -- genlayer write <registry-address> <method> --rpc https://studio.genlayer.com/api --args <arguments...>
-npm exec -- genlayer call <registry-address> <view-method> --rpc https://studio.genlayer.com/api --args <arguments...>
-npm exec -- genlayer receipt <transaction-hash>
-npm exec -- genlayer schema <registry-address>
-npm exec -- genlayer code <registry-address>
-```
+| Run | Readback | Certification |
+| --- | --- | --- |
+| `R-1` stable | `CLOSED`, `PASS`, `pass=2`, `fail=0`, `inconclusive=0` | historical `true`, current `true` |
+| `R-2` defective | `CLOSED`, `FAIL`, `pass=1`, `fail=1`, `inconclusive=0` | historical `false`, current `false` |
+| `R-4` invalid transformation | `CLOSED`, `INCONCLUSIVE`, `pass=0`, `fail=0`, `inconclusive=2` | historical `false`, current `false` |
+| `R-3` independent recheck | `CLOSED`, `PASS`, `pass=2`, parent `R-1` | historical `true`, current `true`; `R-1` unchanged |
 
-Consult `npm exec -- genlayer write --help` for the CLI's argument-encoding syntax (`address`, JSON strings, integers). Do not mix target IDs between the two registries/runs.
+The stable fixture's public manifest was `fixture-v1-stable` and it returned `ALLOW / 6000` for both neutral and urgent tone. The defective fixture's manifest was `fixture-v1-broken` and it returned `ALLOW / 6000` for neutral but `DENY / 0` for urgent.
 
-## 4. Prove validator independence
+## 5. Consumer proof
 
-- Demonstrate ordinary full-consensus success for a valid equivalent transformation.
-- Demonstrate an invalid transformation returning `INCONCLUSIVE` rather than manufacturing a target failure.
-- Preferably run a deliberately conflicting semantic transformation against multiple validators and record an independently corroborated `INVALID` or `AMBIGUOUS` outcome.
-- Reproduce the leader-forgery and disagreement checks with Direct Mode `vm.run_validator` and document that they are mocked-LLM tests, not live malicious network validators.
+The primary consumer is bound to registry `0x4a7F…FA8b`, suite `S-1`, target `T-1`, and the exact stable digest. Its current certification call is a genuine typed cross-contract public view.
 
-## 5. Evidence required before submission
+1. `R-999` finalized with execution `ERROR`; status remained inactive.
+2. `R-1` finalized with execution `SUCCESS`; status became `activated=true, run_id=R-1`.
+3. Reusing `R-1` finalized with execution `ERROR`; status remained unchanged.
 
-Fill `docs/REVIEWER_EVIDENCE.md` with immutable links and actual status readbacks:
+A separately deployed consumer bound to `S-2/T-2` and the exact defective digest rejected `R-2` with finalized execution `ERROR`, proving FAIL-gating separately from an identity mismatch.
 
-- 61999 chain/network verification
-- registry/fixture/consumer contract addresses and deployment hashes
-- finalised **successful** execution results plus authoritative readbacks
-- stable PASS, defective FAIL, invalid INCONCLUSIVE, consumer reject/activate, recheck
-- CI workflow link and committed source SHA
-- byte-for-byte source parity against deployed code, or explicit limitations
+## 6. Source verification
 
-**Do not claim production deployment, explorer verification, or live consumer proof until the network genuinely confirms them.**
+`genlayer-js getContractCode` returned exact byte-for-byte equality with the local committed source for the final registry, both fixture deployments and both consumers. SHA-256 values are in [`SOURCE_SHA256_MANIFEST.json`](../SOURCE_SHA256_MANIFEST.json). The source commit containing the final contract implementation is `5f6d2e0`; the release commit also contains the evidence and documentation but does not alter those contract bytes.
+
+## 7. Operational cautions
+
+- The earlier registry deployment at `0x746ea06755af60d06DEe75993c9dE75fD6336cE9` is superseded and is not a current release address.
+- A finalized receipt with execution `ERROR` is a finalized rejection, not a successful state transition.
+- Target version is target-declared metadata, not cryptographic bytecode identity; current certification is therefore version-based. The source parity proof applies to the deployments recorded above.
+- Direct Mode and live StudioNet evidence are separate categories.

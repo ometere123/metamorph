@@ -116,13 +116,17 @@ The suite freezes a policy, named case author, exact input pairs, transformation
 
 ## Consensus and equivalence
 
-`evaluate_case` passes frozen policy and input pairs (never the target's outputs) to a model. The leader must return one of `VALID / INVALID / AMBIGUOUS`, a matching reason code and real scalar evidence paths from both inputs. The validator independently executes the same semantic task; a proposed leader result is accepted only if it passes strict validation and agrees with the validator's independent semantic conclusion. Path order is canonicalized; invented evidence paths, inconsistent reason codes, extra fields and malformed outputs are rejected.
+`evaluate_case` passes frozen policy and input pairs (never the target's outputs) to a model. The leader must return one of `VALID / INVALID / AMBIGUOUS`, a matching reason code and real scalar evidence paths from both inputs. The validator independently executes the same semantic task; a proposed leader result is accepted only if it passes strict validation and agrees with the validator's independent semantic conclusion. Paths must be real, scalar, bounded and paired across original/variant inputs. The validator compares the substantive relation and reason, not a brittle exact path-list selection; independent validators may cite different valid facts. Invented or crossed paths, inconsistent reason codes, extra fields and malformed outputs are rejected. See [`docs/CONSENSUS.md`](docs/CONSENSUS.md) for the root-cause diagnosis and correction.
 
 Only a `VALID` relation reaches deterministic target-output comparison. This avoids conflating a bad test definition with a defective target. `run_nondet_unsafe` is used instead of exact equality on raw LLM prose. Historical verdicts cannot be edited.
 
 ### Consumer binding
 
 `is_certified(run_id, suite_id, target_id, suite_digest)` is an immutable **historical** certification. `is_certified_current(...)` additionally checks the target's **current public manifest version**, returning false on a mismatch or unavailable target. The demonstration [`MetamorphConsumer`](contracts/fixture_consumer.py) requires current certification and only activates once.
+
+### Verified StudioNet release
+
+The final registry is [`0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b`](https://explorer-studio.genlayer.com/address/0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b), deployed in finalized-successful transaction [`0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8`](https://explorer-studio.genlayer.com/tx/0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8). The stable fixture produced a live exact-bound PASS, the deliberately defective fixture produced a deterministic FAIL, and an invalid transformation produced INCONCLUSIVE. The typed consumer [`0x94312d8de2282485A939953E93De097FD2acf12e`](https://explorer-studio.genlayer.com/address/0x94312d8de2282485A939953E93De097FD2acf12e) activated exactly once from the current PASS and rejected an unknown run and replay. The complete transaction ledger is [`docs/REVIEWER_EVIDENCE.md`](docs/REVIEWER_EVIDENCE.md).
 
 ## Try it locally
 
@@ -141,7 +145,7 @@ python -m genvm_linter.cli check contracts/fixture_target.py --json
 python -m genvm_linter.cli check contracts/fixture_consumer.py --json
 ```
 
-Direct Mode uses the **GenVM v0.2.12** SDK. Its target-view cross-call is stubbed at the VM boundary because Direct Mode loads only one contract class per VM; the fixture target and consumer are separately deployed and executed in dedicated Direct Mode tests. This is not live IC-to-IC evidence. See [`docs/DEPLOY_AND_PROVE.md`](docs/DEPLOY_AND_PROVE.md) for the real StudioNet sequence and [`docs/REVIEWER_EVIDENCE.md`](docs/REVIEWER_EVIDENCE.md) for verified-versus-pending proof.
+Direct Mode uses the **GenVM v0.2.12** SDK. Its target-view cross-call is stubbed at the VM boundary because Direct Mode loads only one contract class per VM; the fixture target and consumer are separately deployed and executed in dedicated Direct Mode tests. This is not live IC-to-IC evidence. See [`docs/DEPLOY_AND_PROVE.md`](docs/DEPLOY_AND_PROVE.md) for the reproducible StudioNet sequence, [`docs/CONSENSUS.md`](docs/CONSENSUS.md) for the consensus boundary, and [`docs/REVIEWER_EVIDENCE.md`](docs/REVIEWER_EVIDENCE.md) for the final receipts.
 
 ## Security, limits and non-claims
 
@@ -150,6 +154,7 @@ Direct Mode uses the **GenVM v0.2.12** SDK. Its target-view cross-call is stubbe
 - The consensus checks semantic validity of the transformation; validator model diversity and evidence quality still matter. It does **not** certify general correctness, accuracy, fairness or safety of the target.
 - `EQUIVALENT` and directional monotonicity refer only to the frozen policy. Unclear or mixed transformations must remain `INCONCLUSIVE`.
 - The consumer must explicitly use `is_certified_current`; a historic PASS alone is not a permanent permission or live system-health assertion.
+- The target adapter's version is target-declared. A matching version is not cryptographic bytecode attestation. This release separately verified exact deployed source bytes with `genlayer-js getContractCode`; that proof is documented in the evidence ledger and does not make arbitrary future target upgrades trustworthy.
 - StudioNet transaction **FINALIZED is not by itself execution success**. Verify `SUCCESS` / `FINISHED_WITH_RETURN` and read the resulting state back before reporting deployment success.
 - No administration override, hidden wallet, custody, fund settlement, privileged oracle, backend or frontend is present.
 
@@ -158,3 +163,7 @@ Direct Mode uses the **GenVM v0.2.12** SDK. Its target-view cross-call is stubbe
 The author's broader `equivtest` registry judges individual frozen semantic requirements against target observations and includes a full frontend. **Metamorph judges relational properties of two target executions**, then uses deterministic mathematics to detect consistency failures without knowing each absolute correct answer. The design remains standalone and useful without any application UI.
 
 License: MIT.
+
+## Submission materials
+
+The concise reviewer-facing description, final addresses, live proof links and explicit limitations are collected in [`SUBMISSION.md`](SUBMISSION.md). The source hashes and deployed-address bindings are in [`SOURCE_SHA256_MANIFEST.json`](SOURCE_SHA256_MANIFEST.json).
