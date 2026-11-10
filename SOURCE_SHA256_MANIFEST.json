@@ -1,6 +1,6 @@
 {
   "format": "metamorph/source-sha256/1",
-  "contract_source_commit": "TO_BE_RECORDED_AFTER_SOURCE_COMMIT",
+  "contract_source_commit": "a0300f1",
   "network": "studionet",
   "chain_id": 61999,
   "rpc": "https://studio.genlayer.com/api",
