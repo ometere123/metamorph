@@ -52,6 +52,18 @@ def test_semantic_decision_valid_shapes(module, raw):
     assert outcome["evidence_paths"] == ["original.years", "variant.years"]
 
 
+def test_semantic_evidence_must_include_observed_input_delta(module):
+    # A leader cannot claim provenance from an unchanged field while hiding a
+    # changed prerequisite elsewhere in the pair.
+    with pytest.raises(Exception):
+        module.clean_semantic_result(
+            {"relation": "VALID", "reason_code": "RELATION_SATISFIED",
+             "evidence_paths": ["original.received_day", "variant.received_day"]},
+            {"received_day": "THU", "signed_receipt": True},
+            {"received_day": "THU", "signed_receipt": False},
+        )
+
+
 @pytest.mark.parametrize("broken", [
     {"relation": "VALID", "reason_code": "MATERIAL_DIFFERENCE", "evidence_paths": ["original.years", "variant.years"]},
     {"relation": "INVALID", "reason_code": "RELATION_SATISFIED", "evidence_paths": ["original.years", "variant.years"]},

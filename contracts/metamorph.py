@@ -140,6 +140,14 @@ def path_leaf(obj, ref):
     return current
 
 
+def path_value_pair(sample, ref):
+    """Return both scalar leaves for one paired evidence path."""
+    if not isinstance(ref, str) or not ref.startswith("original."):
+        return None
+    suffix = ref[len("original."):]
+    return path_leaf(sample, "original." + suffix), path_leaf(sample, "variant." + suffix)
+
+
 def clean_semantic_result(raw, original, variant):
     """Validator-side substantive output integrity; no format-only consensus."""
     require(isinstance(raw, dict), "Malformed semantic decision")
@@ -164,6 +172,13 @@ def clean_semantic_result(raw, original, variant):
     original_paths = {p[len("original."):] for p in refs if p.startswith("original.")}
     variant_paths = {p[len("variant."):] for p in refs if p.startswith("variant.")}
     require(original_paths == variant_paths, "Evidence paths must pair the same input fields")
+    # A provenance list made only of unchanged fields is misleading for a
+    # transformation that actually changed another scalar.  Require at least
+    # one cited pair to show the observed input delta, while still allowing
+    # independent validators to choose different valid paths.
+    pairs = [path_value_pair(sample, "original." + suffix) for suffix in original_paths]
+    require(any(pair is not None and pair[0] != pair[1] for pair in pairs),
+            "Evidence paths must include a changed scalar")
     return {"relation": relation, "reason_code": reason, "evidence_paths": sorted(refs)}
 
 
@@ -213,9 +228,9 @@ def semantic_prompt(policy, case, snapshot):
         "Return EXACT JSON with keys relation, reason_code, evidence_paths. "
         "relation: VALID, INVALID, AMBIGUOUS. reason_code MUST be RELATION_SATISFIED, MATERIAL_DIFFERENCE, "
         "or INSUFFICIENT_BASIS respectively. evidence_paths: 2-8 distinct existing scalar dot paths such as "
-        "original.age and variant.age, including at least one from each input. Use the lexicographically sorted "
-        "smallest set that supports the classification; when one changed or relevant scalar is sufficient, use its "
-        "original and variant paths and do not add unrelated paths. "
+        "original.age and variant.age, including at least one from each input. Include at least one paired scalar "
+        "that actually changed between the inputs. Use the lexicographically sorted smallest set that supports the "
+        "classification; do not cite only unchanged fields or add unrelated paths. "
         "No prose, no other keys. BEGIN UNTRUSTED FROZEN CASE JSON\n" + canonical(evidence) +
         "\nEND UNTRUSTED FROZEN CASE JSON"
     )

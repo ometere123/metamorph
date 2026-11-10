@@ -38,8 +38,12 @@ jobs:
           python -m genvm_linter.cli check contracts/metamorph.py --json
           python -m genvm_linter.cli check contracts/fixture_target.py --json
           python -m genvm_linter.cli check contracts/fixture_consumer.py --json
+          python -m genvm_linter.cli check contracts/policy_target.py --json
+          python -m genvm_linter.cli check contracts/policy_activation.py --json
           python -m genvm_linter.cli schema contracts/metamorph.py --json
           python -m genvm_linter.cli schema contracts/fixture_target.py --json
           python -m genvm_linter.cli schema contracts/fixture_consumer.py --json
+          python -m genvm_linter.cli schema contracts/policy_target.py --json
+          python -m genvm_linter.cli schema contracts/policy_activation.py --json
       - name: Offline and GenVM Direct Mode tests
         run: python -m pytest tests -q

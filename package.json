@@ -10,7 +10,8 @@
     "test:direct": "python -m pytest tests/direct -q",
     "check:network": "node scripts/guard-network.mjs",
     "check:live-network": "node scripts/assert_studionet.mjs",
-    "check:source": "python scripts/verify_source_hashes.py"
+    "check:source": "python scripts/verify_source_hashes.py",
+    "check:evidence": "node scripts/verify_live_evidence.mjs"
   },
   "devDependencies": {
     "genlayer": "0.39.1"

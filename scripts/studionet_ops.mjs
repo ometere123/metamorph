@@ -7,6 +7,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 import { stdin as input, stdout as output } from "node:process";
 import { Wallet } from "ethers";
 import { createAccount, createClient } from "genlayer-js";
@@ -14,6 +15,7 @@ import { studionet } from "genlayer-js/chains";
 import { CalldataAddress, TransactionStatus } from "genlayer-js/types";
 
 const RPC = "https://studio.genlayer.com/api";
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const home = os.homedir();
 const genlayerHome = process.env.GENLAYER_HOME || path.join(home, ".genlayer");
 const keystoreDir = path.join(genlayerHome, "keystores");
@@ -46,9 +48,54 @@ function decodeValue(value) {
 
 async function getPassword() {
   if (password !== undefined) return password;
-  const rl = readline.createInterface({ input, output });
-  password = await rl.question("Keystore password: ");
-  rl.close();
+  if (!input.isTTY || !output.isTTY || typeof input.setRawMode !== "function") {
+    throw new Error("Secure keystore password entry requires an interactive TTY; no password was read");
+  }
+  password = await new Promise((resolve, reject) => {
+    let value = "";
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      input.off("data", onData);
+      input.setRawMode(false);
+      input.pause();
+    };
+    const fail = (error) => {
+      cleanup();
+      output.write("\n");
+      reject(error);
+    };
+    const onData = (chunk) => {
+      for (const char of chunk.toString("utf8")) {
+        if (char === "\u0003") {
+          fail(new Error("Password entry cancelled"));
+          return;
+        }
+        if (char === "\r" || char === "\n") {
+          cleanup();
+          output.write("\n");
+          resolve(value);
+          return;
+        }
+        if (char === "\b" || char === "\u007f") {
+          if (value.length > 0) {
+            value = value.slice(0, -1);
+            output.write("\b \b");
+          }
+          continue;
+        }
+        if (char >= " ") {
+          value += char;
+          output.write("*");
+        }
+      }
+    };
+    input.setRawMode(true);
+    input.resume();
+    input.on("data", onData);
+    output.write("Keystore password: ");
+  });
   return password;
 }
 
@@ -76,12 +123,36 @@ function summary(receipt, hash) {
     hash,
     status: receipt.status_name ?? receipt.status,
     result: receipt.result_name ?? receipt.result,
+    execution_result: receipt.tx_execution_result_name ?? receipt.txExecutionResultName ??
+      receipt.execution_result_name ?? receipt.executionResultName ?? receipt.result_name ?? receipt.result,
     leader_execution: leader?.execution_result,
     validator_executions: (receipt.consensus_data?.validators || []).map((item) => item.execution_result),
     contract_address: receipt.data?.contract_address,
     return_data: receipt.data?.return_data,
     created_at: receipt.created_at,
   };
+}
+
+async function deploy(command) {
+  const client = await getClient(command.account);
+  const contractPath = path.resolve(ROOT, command.contract);
+  const relative = path.relative(ROOT, contractPath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error("contract path must remain inside the repository");
+  }
+  const code = await fs.readFile(contractPath, "utf8");
+  const hash = await client.deployContract({
+    code,
+    args: (command.args || []).map(decodeValue),
+    leaderOnly: false,
+  });
+  const receipt = await client.waitForTransactionReceipt({
+    hash,
+    status: TransactionStatus.FINALIZED,
+    interval: 5000,
+    retries: 120,
+  });
+  return summary(receipt, hash);
 }
 
 async function write(command) {
@@ -115,19 +186,20 @@ async function read(command) {
 
 async function handle(command) {
   try {
+    if (command.op === "deploy") return await deploy(command);
     if (command.op === "write") return await write(command);
     if (command.op === "read") return await read(command);
-    throw new Error("op must be write or read");
+    throw new Error("op must be deploy, write or read");
   } catch (error) {
     return { ok: false, error: String(error?.message || error) };
   }
 }
 
+// Password input is deliberately collected before readline is created.  Raw
+// TTY mode masks each character on Windows and Unix; non-interactive stdin is
+// rejected instead of accepting a password that could be echoed or logged.
+await getPassword();
 const rl = readline.createInterface({ input, output, terminal: Boolean(output.isTTY) });
-// Prompt once on the same readline interface used for commands. A nested
-// readline instance corrupts stdin on Windows PTYs and can turn password
-// characters into phantom commands.
-await rl.question("Keystore password: ").then((value) => { password = value; });
 for await (const line of rl) {
   if (!line.trim()) continue;
   if (line.trim() === "exit") break;

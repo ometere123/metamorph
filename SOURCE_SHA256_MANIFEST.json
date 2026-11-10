@@ -1,14 +1,14 @@
 {
   "format": "metamorph/source-sha256/1",
-  "contract_source_commit": "5f6d2e0",
+  "contract_source_commit": "TO_BE_RECORDED_AFTER_SOURCE_COMMIT",
   "network": "studionet",
   "chain_id": 61999,
   "rpc": "https://studio.genlayer.com/api",
   "files": {
     "contracts/metamorph.py": {
-      "sha256": "48febe775104155aac5ded814db6e417be1646221a4d117f7683ac5e6106bf3e",
-      "deployed_sha256": "fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355",
-      "deployed_addresses": ["0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b"]
+      "sha256": "9c5514ebfa0bad0c4cb66e7768293b590688c32314c0d7c97d32c7d9dd4a2fab",
+      "deployed_sha256": "",
+      "deployed_addresses": []
     },
     "contracts/fixture_target.py": {
       "sha256": "bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4",
@@ -25,11 +25,30 @@
         "0x94312d8de2282485A939953E93De097FD2acf12e",
         "0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b"
       ]
+    },
+    "contracts/policy_target.py": {
+      "sha256": "5ae0fef2acb3026a4100777aeda97061b5d08815706984ddfc4e9d502a071bdd",
+      "deployed_sha256": "",
+      "deployed_addresses": []
+    },
+    "contracts/policy_activation.py": {
+      "sha256": "6de5f8fd52562279b5ef7b0e95778ba1421c3597e32feb3133c4a3885835bee3",
+      "deployed_sha256": "",
+      "deployed_addresses": []
     }
   },
+  "historical_deployments": [
+    {
+      "contract": "contracts/metamorph.py",
+      "address": "0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b",
+      "source_sha256": "48febe775104155aac5ded814db6e417be1646221a4d117f7683ac5e6106bf3e",
+      "deployed_sha256": "fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355",
+      "status": "superseded-by-evidence-path-hardening"
+    }
+  ],
   "verification": {
     "method": "canonical Git-blob hashing in CI plus genlayer-js getContractCode over the required StudioNet RPC",
-    "result": "canonical source matches Git blobs; deployed raw bytes match the deployed_sha256 values byte-for-byte",
+    "result": "Current deployment bindings are populated only after the corresponding finalized deployment and raw-source readback; historical superseded deployments remain separate.",
     "line_endings": "Git/CI canonicalizes CRLF to LF; Windows deployment parity retains the raw deployed bytes",
     "checked": "2026-11-10"
   }

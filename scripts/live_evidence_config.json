@@ -1,0 +1,19 @@
+{
+  "registry": "0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b",
+  "runs": [
+    {"label": "stable PASS", "id": "R-1", "suite": "S-1", "target": "T-1", "digest": "299da4c043615d7ef372903d7ff979577e69182e0fbda648a6ac075ee02a6848", "outcome": "PASS", "certified": true},
+    {"label": "defective FAIL", "id": "R-2", "suite": "S-2", "target": "T-2", "digest": "88c0efd006eefe4cf14ccfe956b3d8227a86e9a7fd6893b028085260c9556bb7", "outcome": "FAIL", "certified": false},
+    {"label": "invalid INCONCLUSIVE", "id": "R-4", "suite": "S-3", "target": "T-1", "digest": "a3a39b78bb17eb020bb7e378b0688cd4684eae4b93b4081e618c8f26616b9e3d", "outcome": "INCONCLUSIVE", "certified": false}
+  ],
+  "consumers": [
+    {"label": "stable PASS consumer", "address": "0x94312d8de2282485A939953E93De097FD2acf12e", "expected_activated": true, "expected_run": "R-1"},
+    {"label": "FAIL-gate consumer", "address": "0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b", "expected_activated": false, "expected_run": ""}
+  ],
+  "transactions": [
+    "0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8",
+    "0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49",
+    "0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92",
+    "0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0",
+    "0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed"
+  ]
+}
