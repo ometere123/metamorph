@@ -31,4 +31,6 @@ Builders register any target exposing the bounded adapter, freeze policy/cases, 
 
 ## Release
 
-Final commit SHA and final GitHub Actions run are recorded after the ordinary push and CI completion. No reviewer score is claimed.
+- Validated implementation commit: [`a578ba332a159e6b08c833d7094a258ec0c4bc35`](https://github.com/ometere123/metamorph/commit/a578ba332a159e6b08c833d7094a258ec0c4bc35); the final evidence-only closeout commit is reported in the release report.
+- CI for the validated implementation: [GitHub Actions run 42853778681](https://github.com/ometere123/metamorph/actions/runs/42853778681), success
+- No reviewer score is claimed.

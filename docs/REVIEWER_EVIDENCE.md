@@ -102,10 +102,11 @@ See [`CONSENSUS.md`](CONSENSUS.md). The old `MAJORITY_DISAGREE` was observed on 
 
 ## CI and release state
 
-The final push must be followed by the GitHub Actions run linked below. This section is intentionally updated only after that run completes; a historical green run is not substituted for final-commit CI.
+The final release commit and its completed workflow are recorded here. The earlier failed run `42853149930` was caused by the cross-platform raw line-ending hash check and is superseded by the corrected source gate.
 
 | Item | Result |
 | --- | --- |
-| Final GitHub Actions run | To be filled from the final pushed commit |
-| Final source commit | Contract source is `5f6d2e0`; final release commit is reported after push |
+| Final GitHub Actions run | [42853778681 — success](https://github.com/ometere123/metamorph/actions/runs/42853778681) |
+| Contract source commit | `5f6d2e0`; deployed bytes and the final contract implementation are source-matched to this commit |
+| CI-verified release predecessor | [`a578ba332a159e6b08c833d7094a258ec0c4bc35`](https://github.com/ometere123/metamorph/commit/a578ba332a159e6b08c833d7094a258ec0c4bc35); the final evidence-only closeout commit is reported separately |
 | Submission scope | Contract-only; no frontend, backend, database, Docker or application wallet integration |
