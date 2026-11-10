@@ -47,3 +47,5 @@ jobs:
           python -m genvm_linter.cli schema contracts/policy_activation.py --json
       - name: Offline and GenVM Direct Mode tests
         run: python -m pytest tests -q
+      - name: Read-only StudioNet evidence verification
+        run: npm run check:evidence

@@ -7,8 +7,8 @@
   "files": {
     "contracts/metamorph.py": {
       "sha256": "9c5514ebfa0bad0c4cb66e7768293b590688c32314c0d7c97d32c7d9dd4a2fab",
-      "deployed_sha256": "",
-      "deployed_addresses": []
+      "deployed_sha256": "c09d84d736ef27baa85101f69b650bbc079407954148aaff37254ec4e296445b",
+      "deployed_addresses": ["0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF"]
     },
     "contracts/fixture_target.py": {
       "sha256": "bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4",
@@ -28,13 +28,20 @@
     },
     "contracts/policy_target.py": {
       "sha256": "5ae0fef2acb3026a4100777aeda97061b5d08815706984ddfc4e9d502a071bdd",
-      "deployed_sha256": "",
-      "deployed_addresses": []
+      "deployed_sha256": "5ae0fef2acb3026a4100777aeda97061b5d08815706984ddfc4e9d502a071bdd",
+      "deployed_addresses": [
+        "0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A",
+        "0x3F52532f59E60fa5FD3495fEc40CbbbfbBaB3705"
+      ]
     },
     "contracts/policy_activation.py": {
       "sha256": "6de5f8fd52562279b5ef7b0e95778ba1421c3597e32feb3133c4a3885835bee3",
-      "deployed_sha256": "",
-      "deployed_addresses": []
+      "deployed_sha256": "6de5f8fd52562279b5ef7b0e95778ba1421c3597e32feb3133c4a3885835bee3",
+      "deployed_addresses": [
+        "0x5FBf59d09daAa5512A23431cDEEEe36e3Cd77D45",
+        "0xd2974957F514AD183989D9D0e7168fF69d9c4ad9",
+        "0x3D1d346E55f2D44322912bc2A2A0CD9Ce38Ae849"
+      ]
     }
   },
   "historical_deployments": [
@@ -48,7 +55,7 @@
   ],
   "verification": {
     "method": "canonical Git-blob hashing in CI plus genlayer-js getContractCode over the required StudioNet RPC",
-    "result": "Current deployment bindings are populated only after the corresponding finalized deployment and raw-source readback; historical superseded deployments remain separate.",
+    "result": "Canonical Git source hashes and raw deployed-byte hashes were independently compared through genlayer-js getContractCode over the required StudioNet RPC; Windows CRLF is documented separately from canonical Git hashing.",
     "line_endings": "Git/CI canonicalizes CRLF to LF; Windows deployment parity retains the raw deployed bytes",
     "checked": "2026-11-10"
   }

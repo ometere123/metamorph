@@ -118,14 +118,17 @@ async function getClient(name) {
 
 function summary(receipt, hash) {
   const leader = receipt.consensus_data?.leader_receipt?.[0];
+  const leaderExecution = leader?.execution_result;
+  const executionOk = ["SUCCESS", "FINISHED_WITH_RETURN"].includes(leaderExecution);
   return {
-    ok: true,
+    ok: executionOk,
     hash,
     status: receipt.status_name ?? receipt.status,
     result: receipt.result_name ?? receipt.result,
     execution_result: receipt.tx_execution_result_name ?? receipt.txExecutionResultName ??
       receipt.execution_result_name ?? receipt.executionResultName ?? receipt.result_name ?? receipt.result,
-    leader_execution: leader?.execution_result,
+    execution_ok: executionOk,
+    leader_execution: leaderExecution,
     validator_executions: (receipt.consensus_data?.validators || []).map((item) => item.execution_result),
     contract_address: receipt.data?.contract_address,
     return_data: receipt.data?.return_data,

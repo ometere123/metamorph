@@ -1,98 +1,162 @@
-# StudioNet 61999 deployment and proof record
+# Deploy and prove Metamorph
 
-This is the reproducible deployment record for Metamorph. The required target is always `studionet`, chain `61999` (`0xf22f`), RPC `https://studio.genlayer.com/api`, using the repository-local `genlayer@0.39.1`. Do not substitute `studio-dev`, `studio-next`, chain `61997` or the global CLI.
+This runbook records the source-matched release and the exact commands used to
+verify it. It is limited to stable StudioNet: network studionet, chain 61999 /
+0xf22f, RPC https://studio.genlayer.com/api, repository-local genlayer 0.39.1,
+stable GenVM v0.2.12, genvm-linter 0.11.0 and genlayer-test 0.29.0.
 
-## 1. Reproducible preflight
+## 1. Reproduce the locked environment
 
-```powershell
-npm ci --ignore-scripts --no-audit --no-fund
-python -m pip install -r requirements-dev.txt
-npm exec -- genlayer network set studionet
-npm run check:network
-npm run check:live-network
-npm exec -- genlayer --version
-npm exec -- genlayer network info
-```
+From the repository root:
 
-`check:network` verifies the repository-local CLI, selected alias and configuration. `check:live-network` sends JSON-RPC `eth_chainId` to the exact required endpoint and requires `0xf22f` / `61999`. A configuration file or alias alone is not sufficient.
+    npm ci --ignore-scripts --no-audit --no-fund
+    python -m pip install -r requirements-dev.txt
+    npm exec -- genlayer network set studionet
+    npm run check:network
+    npm run check:live-network
+    npm exec -- genlayer --version
 
-The final preflight returned:
+The live guard independently calls eth_chainId on the required RPC and requires
+0xf22f. No global GenLayer executable or preview network is part of this
+release.
 
-```text
-PASS: studionet / chain 61999 / local GenLayer CLI 0.39.1
-PASS: live https://studio.genlayer.com/api eth_chainId=0xf22f (61999)
-```
+## 2. Local verification recorded for this release
 
-## 2. Local quality gates
+The final local run on 2026-11-10 recorded:
 
-```powershell
-python -m compileall -q contracts tests
-python -m pytest tests/offline -q
-python -m pytest tests/direct -q
-python -m pytest tests -q
-$env:GENVM_VERSION = 'v0.2.12'
-python -m genvm_linter.cli check contracts/metamorph.py --json
-python -m genvm_linter.cli check contracts/fixture_target.py --json
-python -m genvm_linter.cli check contracts/fixture_consumer.py --json
-python -m genvm_linter.cli schema contracts/metamorph.py --json
-python -m genvm_linter.cli schema contracts/fixture_target.py --json
-python -m genvm_linter.cli schema contracts/fixture_consumer.py --json
-```
+| Gate | Result |
+| --- | --- |
+| python -m pytest tests/offline -q | 39 passed |
+| python -m pytest tests/direct -q | 20 passed |
+| python -m pytest tests -q | 59 passed |
+| python -m compileall -q contracts tests | PASS |
+| python scripts/verify_source_hashes.py | PASS, 5 deployable sources |
+| npm run check:network | PASS, studionet / 61999 / local 0.39.1 |
+| npm run check:live-network | PASS, live eth_chainId=0xf22f |
+| GenVM lint | PASS for all five contracts, stable v0.2.12 |
+| ABI/schema extraction | PASS for all five contracts |
+| npm run check:evidence | PASS; no contradicted state/source claims |
 
-The final result was 36 offline tests, 15 Direct Mode tests and 51 total tests passed. Linter `0.11.0` accepted all three contracts and all three schema commands succeeded. Direct Mode uses controlled VM-boundary mocks; the multi-contract proof is the live StudioNet evidence below.
+Direct Mode uses controlled VM-boundary adapters and model-response fixtures; it
+is not represented as live validator identity evidence. Live consensus and
+cross-contract results are listed separately below.
 
-## 3. Final deployments
+## 3. Source-matched live deployments
 
-All deployment receipts were polled to `FINALIZED` and checked for successful GenVM execution, not merely accepted submission.
+Explorer base: https://explorer-studio.genlayer.com/.
 
-| Artifact | Address | Deployment transaction | Receipt |
+| Contract | Address | Deployment transaction | Result |
 | --- | --- | --- | --- |
-| Stable fixture (`inconsistent=False`) | [`0xE763C5294ea266D2C17106fFd6d5136A6d607C22`](https://explorer-studio.genlayer.com/address/0xE763C5294ea266D2C17106fFd6d5136A6d607C22) | [`0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49`](https://explorer-studio.genlayer.com/tx/0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
-| Defective fixture (`inconsistent=True`) | [`0x286345CcD4A86560e8F97D1Fe2bc140724cfA354`](https://explorer-studio.genlayer.com/address/0x286345CcD4A86560e8F97D1Fe2bc140724cfA354) | [`0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92`](https://explorer-studio.genlayer.com/tx/0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
-| **Metamorph registry** | [`0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b`](https://explorer-studio.genlayer.com/address/0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b) | [`0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8`](https://explorer-studio.genlayer.com/tx/0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
-| Stable-PASS consumer | [`0x94312d8de2282485A939953E93De097FD2acf12e`](https://explorer-studio.genlayer.com/address/0x94312d8de2282485A939953E93De097FD2acf12e) | [`0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0`](https://explorer-studio.genlayer.com/tx/0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
-| FAIL-gate consumer | [`0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b`](https://explorer-studio.genlayer.com/address/0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b) | [`0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed`](https://explorer-studio.genlayer.com/tx/0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed) | `FINALIZED`, `MAJORITY_AGREE`, `SUCCESS` |
+| Metamorph registry | [0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF](https://explorer-studio.genlayer.com/address/0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF) | [0x28bcc805dbfd8fcb0069dbcd2729a1430248e2b4f557415b00510c68c5dfb966](https://explorer-studio.genlayer.com/tx/0x28bcc805dbfd8fcb0069dbcd2729a1430248e2b4f557415b00510c68c5dfb966) | FINALIZED; MAJORITY_AGREE; leader execution SUCCESS |
+| Stable policy target | [0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A](https://explorer-studio.genlayer.com/address/0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A) | [0x9bd9179826e6fba9b1966e1694837f9712729361ceefa44cc258ab9f231d76bd](https://explorer-studio.genlayer.com/tx/0x9bd9179826e6fba9b1966e1694837f9712729361ceefa44cc258ab9f231d76bd) | FINALIZED; execution SUCCESS |
+| Defective policy target | [0x3F52532f59E60fa5FD3495fEc40CbbbfbBaB3705](https://explorer-studio.genlayer.com/address/0x3F52532f59E60fa5FD3495fEc40CbbbfbBaB3705) | [0xa7fd824b1738714710ebfd1f4d5487e3e8e564f5169bf4e854a7c1bf14d1bb09](https://explorer-studio.genlayer.com/tx/0xa7fd824b1738714710ebfd1f4d5487e3e8e564f5169bf4e854a7c1bf14d1bb09) | FINALIZED; execution SUCCESS; inconsistent=true |
+| Qualified policy activation | [0x5FBf59d09daAa5512A23431cDEEEe36e3Cd77D45](https://explorer-studio.genlayer.com/address/0x5FBf59d09daAa5512A23431cDEEEe36e3Cd77D45) | [0x0f4de2c4d62afad284d129c7a387e1dcf3bf476cf4cfffe67c86bfbd08b1dd19](https://explorer-studio.genlayer.com/tx/0x0f4de2c4d62afad284d129c7a387e1dcf3bf476cf4cfffe67c86bfbd08b1dd19) | FINALIZED; execution SUCCESS |
+| Defective-candidate refusal | [0xd2974957F514AD183989D9D0e7168fF69d9c4ad9](https://explorer-studio.genlayer.com/address/0xd2974957F514AD183989D9D0e7168fF69d9c4ad9) | [0xcf08747ca1952ef92e3b7665af66814205999cc3065dff70c338dbef3ea97010](https://explorer-studio.genlayer.com/tx/0xcf08747ca1952ef92e3b7665af66814205999cc3065dff70c338dbef3ea97010) | FINALIZED; remains inactive |
+| Ambiguous-candidate refusal | [0x3D1d346E55f2D44322912bc2A2A0CD9Ce38Ae849](https://explorer-studio.genlayer.com/address/0x3D1d346E55f2D44322912bc2A2A0CD9Ce38Ae849) | [0xae4e44c70d30529766052a3d570950861faee0fd466b1fd60ec7a8c04cec2371](https://explorer-studio.genlayer.com/tx/0xae4e44c70d30529766052a3d570950861faee0fd466b1fd60ec7a8c04cec2371) | FINALIZED; remains inactive |
 
-The registry constructor has no arguments. The consumer constructor was encoded with a typed `CalldataAddress`, the final registry address, and the exact stable or defective suite binding. No plain text address was used for the ABI address parameter.
+The earlier registry and fixture/consumer deployments remain as historical
+evidence. They are not the current integration registry. The source-matched
+current registry is the first row.
 
-## 4. Live lifecycle summary
+## 4. Exact policy-activation binding
 
-The final registry recorded stable target `T-1` and defective target `T-2`, then froze:
+The qualified activation contract was constructed with typed GenLayer Address
+arguments and these exact values:
 
-- `S-1` → `T-1`, cases `C-1` equivalent tone change and `C-2` strengthened experience change, digest `299da4c043615d7ef372903d7ff979577e69182e0fbda648a6ac075ee02a6848`.
-- `S-2` → `T-2`, comparable cases `C-3` and `C-4`, digest `88c0efd006eefe4cf14ccfe956b3d8227a86e9a7fd6893b028085260c9556bb7`.
-- `S-3` → `T-1`, two intentionally invalid equivalent claims, digest `a3a39b78bb17eb020bb7e378b0688cd4684eae4b93b4081e618c8f26616b9e3d`.
+    registry:              0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF
+    target_id:              T-1
+    suite_id:               S-1
+    suite_digest:           730f081a66c7b64b9c3e727885ba20d0fc39b7a4fb070bd4aa88db06b4d115b2
+    expected_run_id:        R-1
+    candidate:              0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A
+    policy_id:              eligibility-policy-v1
+    policy_version:         eligibility-policy-v1
+    policy_digest:          49b4c5b2dac5e9fc9ed6eb1ad86dbbf9559de533629892d0e9632a5f2526c5b3
+    authorized_activator:   deployment/test activator address
 
-The authoritative transaction-by-transaction table is in [`REVIEWER_EVIDENCE.md`](REVIEWER_EVIDENCE.md).
+The defective candidate uses the same binding shape with target T-2, suite S-2,
+run R-2 and policy digest
+3b93fa93d4fc740d1c5ee7b1dba1ff0b9cd3d7e1c0289af5d0dee042af6fefe4. The
+ambiguous refusal binds run R-4. The authorized actor is not printed because
+it is not needed for read-only verification.
 
-Observed finalized outcomes:
+## 5. Live lifecycle evidence
 
-| Run | Readback | Certification |
+The current registry readback is targets=2, suites=4, cases=10, runs=5.
+
+| Run | Meaning | Final state |
 | --- | --- | --- |
-| `R-1` stable | `CLOSED`, `PASS`, `pass=2`, `fail=0`, `inconclusive=0` | historical `true`, current `true` |
-| `R-2` defective | `CLOSED`, `FAIL`, `pass=1`, `fail=1`, `inconclusive=0` | historical `false`, current `false` |
-| `R-4` invalid transformation | `CLOSED`, `INCONCLUSIVE`, `pass=0`, `fail=0`, `inconclusive=2` | historical `false`, current `false` |
-| `R-3` independent recheck | `CLOSED`, `PASS`, `pass=2`, parent `R-1` | historical `true`, current `true`; `R-1` unchanged |
+| R-1 / S-1 / T-1 | Stable candidate | PASS, 3/3 cases, historical and current certification true |
+| R-2 / S-2 / T-2 | Defective candidate | FAIL, 1 failed equivalent case and 2 passes, certification false |
+| R-3 / S-3 / T-1 | Missing signed receipt claimed equivalent | INCONCLUSIVE; INVALID / MATERIAL_DIFFERENCE |
+| R-4 / S-4 / T-1 | Underspecified policy | INCONCLUSIVE; AMBIGUOUS / INSUFFICIENT_BASIS |
+| R-5 / S-1 / T-1 | Independent recheck of R-1 | PASS; different tester; parent R-1 unchanged |
 
-The stable fixture's public manifest was `fixture-v1-stable` and it returned `ALLOW / 6000` for both neutral and urgent tone. The defective fixture's manifest was `fixture-v1-broken` and it returned `ALLOW / 6000` for neutral but `DENY / 0` for urgent.
+The stable policy requires a weekday, verified=true, signed_receipt=true and at
+least four years of experience. tone is declared cosmetic. The defective
+candidate makes urgent tone deny an otherwise eligible input. The valid
+equivalent case therefore produces deterministic ALLOW -> DENY and the run
+fails without allowing a claimed semantic relation to write PASS.
 
-## 5. Consumer proof
+The live-policy transaction set, readbacks and explorer links are in
+scripts/live_evidence_config.json. The read-only verifier checks every
+configured run, both certification predicates, all three activation states,
+every listed deployed source and all 60 recorded transaction hashes:
 
-The primary consumer is bound to registry `0x4a7F…FA8b`, suite `S-1`, target `T-1`, and the exact stable digest. Its current certification call is a genuine typed cross-contract public view.
+    npm run check:evidence
+    npm run check:evidence -- --full
 
-1. `R-999` finalized with execution `ERROR`; status remained inactive.
-2. `R-1` finalized with execution `SUCCESS`; status became `activated=true, run_id=R-1`.
-3. Reusing `R-1` finalized with execution `ERROR`; status remained unchanged.
+The default command prints compact transaction/receipt summaries. --full prints
+complete payloads. The verifier never writes and never requires a wallet.
+Missing historical transaction indexing is a warning; contradicted chain
+identity, state, or source claims are failures.
 
-A separately deployed consumer bound to `S-2/T-2` and the exact defective digest rejected `R-2` with finalized execution `ERROR`, proving FAIL-gating separately from an identity mismatch.
+Key state-transition transactions:
 
-## 6. Source verification
+| Action | Transaction |
+| --- | --- |
+| Unauthorized activation rejected | [0x6f2d7469d86a6fae10a910f17744a773ffa1a849eb8570a2c6cba4283ee0c756](https://explorer-studio.genlayer.com/tx/0x6f2d7469d86a6fae10a910f17744a773ffa1a849eb8570a2c6cba4283ee0c756) |
+| Authorized R-1 activation | [0xb559f7e882b9d18f6e4ba4fe34b58377222238f10f7998b80d0c4a42ac4546a6](https://explorer-studio.genlayer.com/tx/0xb559f7e882b9d18f6e4ba4fe34b58377222238f10f7998b80d0c4a42ac4546a6) |
+| Downstream ALLOW authorization | [0xde8dcdf529bd2f2160bcaa65ef92b9bcbf0554dc744a7e94297a2cfaedb476df](https://explorer-studio.genlayer.com/tx/0xde8dcdf529bd2f2160bcaa65ef92b9bcbf0554dc744a7e94297a2cfaedb476df) |
+| Replay rejected | [0x539ca0ac1e520445832ba2f138820069f163a24f6a1854179828fdc5c3b0df30](https://explorer-studio.genlayer.com/tx/0x539ca0ac1e520445832ba2f138820069f163a24f6a1854179828fdc5c3b0df30) |
+| Denied downstream request rejected | [0xbf417961ff591afdfb3d5415fbf78b194875d647d136c79a829a94978548a0ca](https://explorer-studio.genlayer.com/tx/0xbf417961ff591afdfb3d5415fbf78b194875d647d136c79a829a94978548a0ca) |
+| Defective activation refusal | [0xef0cb0323620b551c37e9b0131ef2aa9b720a4aefc970817ac96c17e6c4bb1e4](https://explorer-studio.genlayer.com/tx/0xef0cb0323620b551c37e9b0131ef2aa9b720a4aefc970817ac96c17e6c4bb1e4) |
+| Ambiguous activation refusal | [0x3e789cb4f2fdf1061315514a4c78cb2ef5f57dcff3203604ba7de971a6e3dc8a](https://explorer-studio.genlayer.com/tx/0x3e789cb4f2fdf1061315514a4c78cb2ef5f57dcff3203604ba7de971a6e3dc8a) |
 
-`genlayer-js getContractCode` returned exact byte-for-byte equality with the local committed source for the final registry, both fixture deployments and both consumers. SHA-256 values are in [`SOURCE_SHA256_MANIFEST.json`](../SOURCE_SHA256_MANIFEST.json). The source commit containing the final contract implementation is `5f6d2e0`; the release commit also contains the evidence and documentation but does not alter those contract bytes.
+Rejected operations are not presented as successful execution. Their final
+receipts are retained in the read-only ledger, and unchanged contract
+readbacks are the state proof.
 
-## 7. Operational cautions
+## 6. Source integrity
 
-- The earlier registry deployment at `0x746ea06755af60d06DEe75993c9dE75fD6336cE9` is superseded and is not a current release address.
-- A finalized receipt with execution `ERROR` is a finalized rejection, not a successful state transition.
-- Target version is target-declared metadata, not cryptographic bytecode identity; current certification is therefore version-based. The source parity proof applies to the deployments recorded above.
-- Direct Mode and live StudioNet evidence are separate categories.
+SOURCE_SHA256_MANIFEST.json records canonical Git hashes and raw deployed
+hashes. The current source commit for the five deployable contracts is a0300f1;
+evidence-only documentation/tooling commits do not change those contract bytes.
+
+| File | Canonical SHA-256 | Raw deployed SHA-256 |
+| --- | --- | --- |
+| contracts/metamorph.py | 9c5514ebfa0bad0c4cb66e7768293b590688c32314c0d7c97d32c7d9dd4a2fab | c09d84d736ef27baa85101f69b650bbc079407954148aaff37254ec4e296445b |
+| contracts/fixture_target.py | bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4 | ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906 |
+| contracts/fixture_consumer.py | e866cddd0fccbd6f0049c7c4bc45e308b4134337c7fa1e7dda7ed4c330dd766d | 5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d |
+| contracts/policy_target.py | 5ae0fef2acb3026a4100777aeda97061b5d08815706984ddfc4e9d502a071bdd | same |
+| contracts/policy_activation.py | 6de5f8fd52562279b5ef7b0e95778ba1421c3597e32feb3133c4a3885835bee3 | same |
+
+The verifier retrieves deployed source through genlayer-js getContractCode and
+compares raw deployed bytes separately from canonical LF-normalized Git hashes.
+This is source retrieval evidence for the listed addresses; a target's
+self-declared version remains a distinct, non-cryptographic currentness input.
+
+## 7. Operational security
+
+scripts/studionet_ops.mjs now requires an interactive TTY for keystore password
+entry, disables echo, masks input, refuses non-TTY password reads and never
+prints the password or decrypted wallet material. The deploy operation reads
+only a repository-contained contract path and reports a failed finalized
+execution as ok=false even when a transaction hash exists. No keystore,
+private key, mnemonic or environment secret is committed.
+
+The transaction ledger cannot restore history that the required RPC no longer
+indexes. One historical add_case write for C-5 was not recoverable as a
+transaction hash; the case, suite digest, run and final state are independently
+readable. This is recorded as an evidence limitation, not replaced with an
+unrelated hash.

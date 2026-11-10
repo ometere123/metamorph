@@ -1,112 +1,168 @@
-# Metamorph verification ledger
+# Reviewer evidence ledger
 
-This ledger separates local tests, Direct Mode, GitHub CI and finalized StudioNet evidence. Values below were recorded from the final registry deployment and its source-matched fixtures/consumers on 2026-11-10. The earlier registry `0x746ea06755af60d06DEe75993c9dE75fD6336cE9` is retained only as superseded historical evidence; it is not the release registry.
+This ledger separates local tests, Direct Mode, GitHub Actions and finalized
+StudioNet evidence. It describes the source-matched policy-activation release
+on 2026-11-10.
+
+## Reviewer quick checklist
+
+1. Inspect contracts/metamorph.py semantic validation and deterministic comparator.
+2. Inspect contracts/policy_target.py and policy_activation.py.
+3. Run npm run check:network and npm run check:live-network.
+4. Run npm run check:evidence; use --full for complete transaction payloads.
+5. Read the registry runs R-1 through R-5 below.
+6. Verify the qualified, defective and ambiguous consumer states.
+7. Compare source hashes with SOURCE_SHA256_MANIFEST.json.
+8. Reproduce python -m pytest tests -q and the five-contract lint/schema commands.
 
 ## Locked environment
 
-| Item | Verified result | Evidence |
-| --- | --- | --- |
-| Network | `studionet` | Repository-local CLI network guard |
-| Chain | `61999` / `0xf22f` | Live `eth_chainId` from the required RPC |
-| RPC | `https://studio.genlayer.com/api` | `npm run check:live-network` |
-| CLI | `genlayer@0.39.1` | `node_modules/.bin/genlayer(.cmd) --version` |
-| GenVM bundle | `v0.2.12` | linter download and Direct Mode configuration |
-| Linter | `genvm-linter 0.11.0` | three contracts checked and three schemas extracted |
-| Python test package | `genlayer-test 0.29.0` | pinned requirements and test run |
-| Preview network/global CLI | Not used | no `61997`, `studio-dev`, `studio-next` or global CLI invocation |
-
-## Local verification
-
-| Gate | Result |
+| Item | Verified value |
 | --- | --- |
-| `python -m pytest tests/offline -q` | **36 passed** |
-| `python -m pytest tests/direct -q` | **15 passed** |
-| `python -m pytest tests -q` | **51 passed** |
-| `python -m compileall -q contracts tests` | **PASS** |
-| `npm run check:network` | **PASS** |
-| `npm run check:live-network` | **PASS**, live `eth_chainId=0xf22f` |
-| GenVM lint | **PASS**, all three contracts, 3/3 lint checks each |
-| ABI/schema extraction | **PASS**, all three contracts |
+| Network | studionet |
+| Chain | 61999 / 0xf22f |
+| RPC | https://studio.genlayer.com/api |
+| Live RPC identity | eth_chainId = 0xf22f |
+| Local CLI | genlayer 0.39.1 |
+| GenVM | stable v0.2.12 |
+| Linter | genvm-linter 0.11.0 |
+| Direct Mode package | genlayer-test 0.29.0 |
+| Preview/global tooling | not used |
 
-Direct Mode uses controlled VM-boundary adapters and mocked semantic responses. It is not a claim that those tests are live StudioNet validator identities. The live receipts below are the separate network evidence.
+The live network check calls the required RPC rather than trusting the CLI
+alias. The repository-local executable was used throughout.
 
-## Final deployed contracts
+## Local gates
 
-Explorer pages use the official StudioNet explorer: [`explorer-studio.genlayer.com`](https://explorer-studio.genlayer.com/). Each linked transaction was checked for HTTP availability and each receipt was independently polled to `FINALIZED` with the execution result recorded.
+| Gate | Fresh result |
+| --- | --- |
+| Offline tests | 39 passed |
+| Direct Mode tests | 20 passed |
+| Full suite | 59 passed |
+| Python compilation | PASS |
+| Source hashes | PASS for 5 deployable sources |
+| GenVM lint | PASS for metamorph, fixture_target, fixture_consumer, policy_target and policy_activation |
+| ABI/schema extraction | PASS for all five contracts |
+| Live read-only evidence verifier | PASS |
 
-| Contract | Address | Deployment transaction | Final result |
+Direct Mode semantic results are controlled leader/validator fixtures at the VM
+boundary. They exercise response parsing, disagreement and fail-closed logic,
+but they are not live validator identity evidence. The StudioNet table below is
+the separate live proof.
+
+## Current source-matched deployments
+
+Explorer base: https://explorer-studio.genlayer.com/.
+
+| Contract | Address | Deployment transaction |
+| --- | --- | --- |
+| Metamorph registry | [0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF](https://explorer-studio.genlayer.com/address/0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF) | [0x28bcc805dbfd8fcb0069dbcd2729a1430248e2b4f557415b00510c68c5dfb966](https://explorer-studio.genlayer.com/tx/0x28bcc805dbfd8fcb0069dbcd2729a1430248e2b4f557415b00510c68c5dfb966) |
+| Stable policy target | [0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A](https://explorer-studio.genlayer.com/address/0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A) | [0x9bd9179826e6fba9b1966e1694837f9712729361ceefa44cc258ab9f231d76bd](https://explorer-studio.genlayer.com/tx/0x9bd9179826e6fba9b1966e1694837f9712729361ceefa44cc258ab9f231d76bd) |
+| Defective policy target | [0x3F52532f59E60fa5FD3495fEc40CbbbfbBaB3705](https://explorer-studio.genlayer.com/address/0x3F52532f59E60fa5FD3495fEc40CbbbfbBaB3705) | [0xa7fd824b1738714710ebfd1f4d5487e3e8e564f5169bf4e854a7c1bf14d1bb09](https://explorer-studio.genlayer.com/tx/0xa7fd824b1738714710ebfd1f4d5487e3e8e564f5169bf4e854a7c1bf14d1bb09) |
+| Qualified activation | [0x5FBf59d09daAa5512A23431cDEEEe36e3Cd77D45](https://explorer-studio.genlayer.com/address/0x5FBf59d09daAa5512A23431cDEEEe36e3Cd77D45) | [0x0f4de2c4d62afad284d129c7a387e1dcf3bf476cf4cfffe67c86bfbd08b1dd19](https://explorer-studio.genlayer.com/tx/0x0f4de2c4d62afad284d129c7a387e1dcf3bf476cf4cfffe67c86bfbd08b1dd19) |
+| Defective refusal | [0xd2974957F514AD183989D9D0e7168fF69d9c4ad9](https://explorer-studio.genlayer.com/address/0xd2974957F514AD183989D9D0e7168fF69d9c4ad9) | [0xcf08747ca1952ef92e3b7665af66814205999cc3065dff70c338dbef3ea97010](https://explorer-studio.genlayer.com/tx/0xcf08747ca1952ef92e3b7665af66814205999cc3065dff70c338dbef3ea97010) |
+| Ambiguous refusal | [0x3D1d346E55f2D44322912bc2A2A0CD9Ce38Ae849](https://explorer-studio.genlayer.com/address/0x3D1d346E55f2D44322912bc2A2A0CD9Ce38Ae849) | [0xae4e44c70d30529766052a3d570950861faee0fd466b1fd60ec7a8c04cec2371](https://explorer-studio.genlayer.com/tx/0xae4e44c70d30529766052a3d570950861faee0fd466b1fd60ec7a8c04cec2371) |
+
+All listed deployment transactions finalized with successful execution. The
+registry deployment was the source-hardening build; the earlier registry and
+fixture/consumer addresses remain superseded historical deployments.
+
+## Registry lifecycle
+
+The current registry readback is targets=2, suites=4, cases=10, runs=5.
+
+| Run | Suite / target | Frozen digest | Readback |
 | --- | --- | --- | --- |
-| Stable target fixture | [`0xE763C529…607C22`](https://explorer-studio.genlayer.com/address/0xE763C5294ea266D2C17106fFd6d5136A6d607C22) | [`0x76f717…cb7d49`](https://explorer-studio.genlayer.com/tx/0x76f717481f6eb37e6d5105dd81770121840e1a72be31752faafa8d4ad1cb7d49) | `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS` |
-| Defective target fixture | [`0x286345Cc…cfA354`](https://explorer-studio.genlayer.com/address/0x286345CcD4A86560e8F97D1Fe2bc140724cfA354) | [`0xe6492e…a34a92`](https://explorer-studio.genlayer.com/tx/0xe6492eab68d8878fd3769554af18263b68fdab215c5391f810c71d140ca34a92) | `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS` |
-| **Final Metamorph registry** | [`0x4a7F6a37…5aFA8b`](https://explorer-studio.genlayer.com/address/0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b) | [`0x02aebf…2868ce8`](https://explorer-studio.genlayer.com/tx/0x02aebfe82ccbf12c9ec2956cc1f331a1daa72afb4553731a0bf78e2342868ce8) | `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS` |
-| **Primary consumer, stable PASS binding** | [`0x94312d8d…cf12e`](https://explorer-studio.genlayer.com/address/0x94312d8de2282485A939953E93De097FD2acf12e) | [`0x293a8d…d4fa0`](https://explorer-studio.genlayer.com/tx/0x293a8d51cd2e7091066afbebe939a7c7bf77419002479347080032adae1d4fa0) | `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS` |
-| Negative consumer, defective FAIL binding | [`0x3EFCF9fb…Cc440b`](https://explorer-studio.genlayer.com/address/0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b) | [`0xc5b0c9…f5daed`](https://explorer-studio.genlayer.com/tx/0xc5b0c9770f725b32ee0973ab6d8df0a749aa3627c18350c33a9769276df5daed) | `FINALIZED`, `MAJORITY_AGREE`, execution `SUCCESS` |
+| R-1 | S-1 / T-1 stable | 730f081a66c7b64b9c3e727885ba20d0fc39b7a4fb070bd4aa88db06b4d115b2 | PASS; 3 passes; historical=true; current=true |
+| R-2 | S-2 / T-2 defective | 32b2a8737b09f6bfa4f34ed818ab0000a216f732e2512dea554c4125319e3d6d | FAIL; one failed equivalent case; certified=false |
+| R-3 | S-3 / T-1 invalid | 3791bf01bf77c4c614a63f0d453523222ce37cba3746a5d6aadfec3c5d15fb4b | INCONCLUSIVE; missing receipt was INVALID / MATERIAL_DIFFERENCE |
+| R-4 | S-4 / T-1 ambiguous | 2c551540df49ae4dedcfcad55b51975b44379c1b07ad5906621e47938524fe7c | INCONCLUSIVE; both cases AMBIGUOUS / INSUFFICIENT_BASIS |
+| R-5 | S-1 / T-1 recheck | 730f081a66c7b64b9c3e727885ba20d0fc39b7a4fb070bd4aa88db06b4d115b2 | PASS; distinct tester; R-1 preserved |
 
-The final registry source was deployed after the evidence-path consensus correction. Its exact source is commit `5f6d2e0`; the earlier registry deployment at `0x746ea06755af60d06DEe75993c9dE75fD6336cE9` used the superseded source and must not be used for current proofs.
+S-1 contains an equivalent tone change, a strengthened experience change and a
+weakened experience change. The stable target passes all three. S-2 uses the
+same shape against the intentionally defective target; its valid equivalent
+case observes ALLOW to DENY, so deterministic comparison produces FAIL.
 
-## Adapter readbacks and source parity
+S-3 demonstrates that a materially missing signed receipt cannot be relabeled
+cosmetic. S-4 freezes intentionally underspecified policy text; live semantic
+readback was AMBIGUOUS and the run could not certify.
 
-The stable fixture returned manifest `{"schema":"metamorph.adapter/1","version":"fixture-v1-stable"}` and both neutral/urgent inputs returned `ALLOW / 6000`. The defective fixture returned `fixture-v1-broken`; the same neutral input returned `ALLOW / 6000` while urgent returned `DENY / 0`.
+## Consequential policy activation
 
-`genlayer-js getContractCode` over the required RPC returned exact byte-for-byte matches for every final deployment:
+The qualified activation consumer is immutably bound to:
 
-| Source | Git-blob SHA-256 | Deployed raw SHA-256 | Retrieved bytes | Deployment(s) |
-| --- | --- | --- | ---: | --- |
-| `contracts/metamorph.py` | `48febe775104155aac5ded814db6e417be1646221a4d117f7683ac5e6106bf3e` | `fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355` | 25,563 | final registry |
-| `contracts/fixture_target.py` | `bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4` | `ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906` | 1,639 | stable and defective fixtures |
-| `contracts/fixture_consumer.py` | `e866cddd0fccbd6f0049c7c4bc45e308b4134337c7fa1e7dda7ed4c330dd766d` | `5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d` | 1,747 | both consumers |
+- registry 0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF
+- target T-1 and candidate 0x6A3fb9a5aA12A90378c9a6b98bef38e121d5B45A
+- suite S-1 and digest 730f081a66c7b64b9c3e727885ba20d0fc39b7a4fb070bd4aa88db06b4d115b2
+- expected run R-1
+- policy id/version eligibility-policy-v1
+- policy digest 49b4c5b2dac5e9fc9ed6eb1ad86dbbf9559de533629892d0e9632a5f2526c5b3
+- one authorized activation actor
 
-The manifest is [`SOURCE_SHA256_MANIFEST.json`](../SOURCE_SHA256_MANIFEST.json). Constructor configuration, not source bytes, distinguishes stable and defective fixture behaviour.
+The contract obtains is_certified_current from the real deployed registry and
+also checks the target record and policy manifest. The unauthorized activation
+transaction [0x6f2d7469d86a6fae10a910f17744a773ffa1a849eb8570a2c6cba4283ee0c756](https://explorer-studio.genlayer.com/tx/0x6f2d7469d86a6fae10a910f17744a773ffa1a849eb8570a2c6cba4283ee0c756)
+left the consumer inactive. Authorized activation
+[0xb559f7e882b9d18f6e4ba4fe34b58377222238f10f7998b80d0c4a42ac4546a6](https://explorer-studio.genlayer.com/tx/0xb559f7e882b9d18f6e4ba4fe34b58377222238f10f7998b80d0c4a42ac4546a6)
+set activated=true and run_id=R-1.
 
-## Final registry lifecycle
+The downstream authorization
+[0xde8dcdf529bd2f2160bcaa65ef92b9bcbf0554dc744a7e94297a2cfaedb476df](https://explorer-studio.genlayer.com/tx/0xde8dcdf529bd2f2160bcaa65ef92b9bcbf0554dc744a7e94297a2cfaedb476df)
+recorded one ALLOW result with score 6500. A denied request
+[0xbf417961ff591afdfb3d5415fbf78b194875d647d136c79a829a94978548a0ca](https://explorer-studio.genlayer.com/tx/0xbf417961ff591afdfb3d5415fbf78b194875d647d136c79a829a94978548a0ca)
+did not increment the count. Replay
+[0x539ca0ac1e520445832ba2f138820069f163a24f6a1854179828fdc5c3b0df30](https://explorer-studio.genlayer.com/tx/0x539ca0ac1e520445832ba2f138820069f163a24f6a1854179828fdc5c3b0df30)
+was rejected and the count remained one. The defective and ambiguous consumers
+remain inactive after their activation attempts.
 
-All successful writes in this table finalized with `MAJORITY_AGREE` and successful leader execution. Rejection controls finalized with `MAJORITY_AGREE` but leader/validator execution `ERROR`, and their state readbacks remained unchanged.
+## Consensus and security evidence
 
-### Registration, suites and freezing
+The primary correction is evidence-path hardening. The leader and validator
+still independently classify the frozen policy and input pair, and the contract
+compares only the substantive relation and reason code rather than brittle raw
+explanations or exact path-list equality. A result is accepted only when its
+paths are real scalar paths, include paired original/variant references, and
+include an observed changed scalar. This blocks a leader that cites only
+unchanged or irrelevant fields while preserving the liveness correction that
+avoided exact path-list comparison.
 
-| Action | Finalized transaction | Readback |
+Direct Mode regressions cover hidden prerequisites, mixed-direction changes,
+different subjects, prompt injection, malicious leader classifications,
+validator disagreement, fabricated/irrelevant paths, duplicate/missing paths
+and malformed semantic outputs. The target outputs are never passed to the
+semantic classifier.
+
+The deterministic comparator alone decides PASS/FAIL after semantic VALID:
+EQUIVALENT requires equal decisions and bounded score delta; STRENGTHENED
+requires non-decreasing rank and score; WEAKENED requires non-increasing rank
+and score. INVALID or AMBIGUOUS always produce INCONCLUSIVE and cannot certify.
+
+## Source integrity and receipts
+
+The source manifest is SOURCE_SHA256_MANIFEST.json. It records canonical Git
+hashes and raw deployed-byte hashes retrieved through genlayer-js
+getContractCode. The source contract commit is a0300f1; later evidence-only
+changes do not change the five contract bytes.
+
+| File | Canonical hash | Deployed raw hash |
 | --- | --- | --- |
-| Register stable target `T-1` | [`0x40e334…ffad769`](https://explorer-studio.genlayer.com/tx/0x40e33419d3fcb92c641d8cc9a8b7c0b83fd208fb49818b75b9ad53fefffad769) | address `0xe763…7c22`, version `fixture-v1-stable`, registrant recorded |
-| Register defective target `T-2` | [`0xbfccb7…2efae0`](https://explorer-studio.genlayer.com/tx/0xbfccb733dea05ab083cf50c71ccb80be87ab3b538f72595e1a711e4bdf2efae0) | address `0x2863…a354`, version `fixture-v1-broken`, registrant recorded |
-| Create stable suite `S-1` | [`0x7ee876…10b7aa`](https://explorer-studio.genlayer.com/tx/0x7ee876b7f022ad7b2931a37af4e9b46172e808fd9f29a616ed2ebecff6110b7aa) | target `T-1`, distinct curator and author |
-| Create defective suite `S-2` | [`0x4650ca…2e1c39`](https://explorer-studio.genlayer.com/tx/0x4650ca335a206c40ffeb82254983ab363e1bcd5c06f8c195f03f6bf85e2e1c39) | target `T-2`, distinct curator and author |
-| Freeze `S-1` | [`0xdff14d…404eb3`](https://explorer-studio.genlayer.com/tx/0xdff14daf56dcae85a7e325ca8f1a0bd6162e0b7e1cc1ad8083fba4998f4404eb3) | digest `299da4c043615d7ef372903d7ff979577e69182e0fbda648a6ac075ee02a6848`, cases `C-1,C-2` |
-| Freeze `S-2` | [`0x770f08…937212`](https://explorer-studio.genlayer.com/tx/0x770f08663b94f695848ae01ec2430c11a32428da9db7f395b2278243209937212) | digest `88c0efd006eefe4cf14ccfe956b3d8227a86e9a7fd6893b028085260c9556bb7`, cases `C-3,C-4` |
-| Create/freeze invalid suite `S-3` | [`0xcc7c70…61ca74`](https://explorer-studio.genlayer.com/tx/0xcc7c7058f3326c185a5535b5a6ff51cbb187812f2cfec6611928fb8272661ca74) | digest `a3a39b78bb17eb020bb7e378b0688cd4684eae4b93b4081e618c8f26616b9e3d`, cases `C-5,C-6` |
-| Post-freeze mutation attempt | [`0x57d120…e9b55b`](https://explorer-studio.genlayer.com/tx/0x57d120772537899d4fd956d267e4e86f4283a1e89da3d2c8dd6a667c48ee9b55b) | finalized execution `ERROR`; frozen suite unchanged |
+| contracts/metamorph.py | 9c5514ebfa0bad0c4cb66e7768293b590688c32314c0d7c97d32c7d9dd4a2fab | c09d84d736ef27baa85101f69b650bbc079407954148aaff37254ec4e296445b |
+| contracts/fixture_target.py | bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4 | ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906 |
+| contracts/fixture_consumer.py | e866cddd0fccbd6f0049c7c4bc45e308b4134337c7fa1e7dda7ed4c330dd766d | 5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d |
+| contracts/policy_target.py | 5ae0fef2acb3026a4100777aeda97061b5d08815706984ddfc4e9d502a071bdd | same |
+| contracts/policy_activation.py | 6de5f8fd52562279b5ef7b0e95778ba1421c3597e32feb3133c4a3885835bee3 | same |
 
-## Live semantic runs
+A read-only evidence script runs through the required RPC, checks chain identity,
+reads every configured run and consumer, retrieves every listed source and
+checks every transaction hash. It reports unsupported historical transaction
+indexing as a warning and fails only contradicted mandatory claims. One
+historical add_case write for C-5 was not recoverable as a transaction hash;
+C-5 and its resulting suite/run state remain readable and are not replaced by
+an unrelated hash. Use:
 
-| Run | Open / capture / evaluate / close | Final on-chain result |
-| --- | --- | --- |
-| Stable `R-1` | open [`0xc44b…0c8ba5`](https://explorer-studio.genlayer.com/tx/0xc44b685820fff52b4bff57aae6227e64bba8639d66ec73b811cec8ae1c00c8ba5); captures [`C-1`](https://explorer-studio.genlayer.com/tx/0xe57c86866750ba279da5de4bdc3c15bc5c8f226051f8c7ccc365c0908655275c), [`C-2`](https://explorer-studio.genlayer.com/tx/0xb367263941a872dc14286019c175d957f21dea7f4a57ae2618e9141540559c93c); evaluates [`C-1`](https://explorer-studio.genlayer.com/tx/0xf10cb4f0042282ccacc2e99ddd244773c39c7ae94c06edee42a5272eae554c18b), [`C-2`](https://explorer-studio.genlayer.com/tx/0xd911392303063cf7fd3ca24e694e269508d6e414a72aee064f0e122cad11a84e2); close [`0xb1b855…e7ee5b`](https://explorer-studio.genlayer.com/tx/0xb1b8553ed1f154344010b05b7e873c35d9609eddaad879ea72bc903745ee7ee5b) | `C-1 VALID/PASS`, `C-2 VALID/PASS`; run `PASS`, `pass=2`, historical/current certification `true` |
-| Defective `R-2` | open [`0x69835d…462ada`](https://explorer-studio.genlayer.com/tx/0x69835dd5557332ee5b71cb58b4aaefe7f83c46a35d0729de6e6a68b7e14462ada); captures [`C-3`](https://explorer-studio.genlayer.com/tx/0x63b5654514cf794ccd67bef5681dae468031605a50a34baa318815c81eeecc022), [`C-4`](https://explorer-studio.genlayer.com/tx/0x7adebcc3cc1d8bf947826d6ff33bcfe31cd3159197dcbdc39bc58227fb227b262); evaluates [`C-3`](https://explorer-studio.genlayer.com/tx/0xdbc97c85e2552de200efe01308af587529c876b708b2f860acb0b7b8f00017ad5), [`C-4`](https://explorer-studio.genlayer.com/tx/0x974afe1b6d26db716fe66c1ed82a46ff5889d5e3fd77e984510c8f628aee8e810); close [`0x7695f6…1c045e`](https://explorer-studio.genlayer.com/tx/0x7695f6cd69c126a19646f287d8dc1710b44babc28753438921a589f07e11c045e) | `C-3 VALID/FAIL`, `C-4 VALID/PASS`; run `FAIL`, `fail=1`, certification `false` |
-| Invalid transformation `R-4` | open [`0xb8a6dd…56b2fe`](https://explorer-studio.genlayer.com/tx/0xb8a6ddc6fe8a08cad5d0d506e7e7d3c946db9dc6298e182eb64f2034a1556b2fe); captures [`C-5`](https://explorer-studio.genlayer.com/tx/0x5e0dfdc567fc706533763ba894850241bb93e46196c44d4a9d25c9ea3455e6a3c), [`C-6`](https://explorer-studio.genlayer.com/tx/0x0a5afb38a531f427468ac67295d3b16ded37d86cc1540a48bc0df6aaecdd1db93); evaluates [`C-5`](https://explorer-studio.genlayer.com/tx/0xe7ec0f4b1f65e3dbc97eb32c93421e680996908cc1e097830ca696af007bcbf2), [`C-6`](https://explorer-studio.genlayer.com/tx/0x10d716a2fabdb2783a3578c7251d5fc0b0f39a144a9016b46604b3a4ea01d0d); close [`0x57142e…e41bb2`](https://explorer-studio.genlayer.com/tx/0x57142e60ab55e0e363d7fd136740765cbabcd62829ce1f0578bf09d612ee41bb2) | `C-5/C-6 INVALID/MATERIAL_DIFFERENCE → INCONCLUSIVE`; run `INCONCLUSIVE`, `inconclusive=2`, certification `false` |
+    npm run check:evidence
+    npm run check:evidence -- --full
 
-The exact stable run readback is `state=CLOSED, outcome=PASS, pass=2, fail=0, inconclusive=0`. The defective readback is `state=CLOSED, outcome=FAIL, pass=1, fail=1, inconclusive=0`. The invalid readback is `state=CLOSED, outcome=INCONCLUSIVE, pass=0, fail=0, inconclusive=2`.
-
-## Recheck and consumer proofs
-
-| Proof | Transaction / readback |
-| --- | --- |
-| Same tester recheck rejected | [`0x0c7421…55f5f9`](https://explorer-studio.genlayer.com/tx/0x0c7421a85a5a529a31a4560dfdba4792e104621404a15a095eee9db60a555f5f9), finalized with leader and validators `ERROR` |
-| Independent recheck `R-3` | open [`0x10c612…732b67`](https://explorer-studio.genlayer.com/tx/0x10c61221ebe481143694bff539943f694125634fb36d5ff4bec311a58b7732b67), captures [`C-1`](https://explorer-studio.genlayer.com/tx/0x3a579c9a4110489a5fd81ea134faf69a31b9c070bb7299b3cf54488a0b77125aa), [`C-2`](https://explorer-studio.genlayer.com/tx/0xe6f421561c7708e535b2d0be12a3d6ff1e098c52ab3790d63a8127ea8b4465a1f), evaluates [`C-1`](https://explorer-studio.genlayer.com/tx/0x472c2d640ff3ebf018ddc8fd8339907e3ed87a335fd7d5cf3da1237a64bb96121), [`C-2`](https://explorer-studio.genlayer.com/tx/0x88c29ffa004548f0eb7a38340494c67b838d3f2c002e6dbf779eb945c466c74c2), close [`0xe6a3ee…d7e3ef`](https://explorer-studio.genlayer.com/tx/0xe6a3ee063f698ed8ea497b8cd4def1793abdb0ba59504621a5c9ea3695dd7e3ef) | `R-3 PASS`; parent `R-1` readback unchanged |
-| Unknown run rejected by primary consumer | [`0xd7ddaa…4b2634`](https://explorer-studio.genlayer.com/tx/0xd7ddaaafaca7b76d14fbfcc76f91abd3e64689434a456690935ab31ae044b2634), finalized execution `ERROR`; status stayed inactive |
-| Exact stable PASS activates primary consumer | [`0x91a57d…bedbc7`](https://explorer-studio.genlayer.com/tx/0x91a57da2bddb10805bbbd6e09766d34238414c563a63485589735e98f8bbedbc7), finalized execution `SUCCESS`; status `activated=true, run_id=R-1` |
-| Replay rejected | [`0xd1ce87…df0813`](https://explorer-studio.genlayer.com/tx/0xd1ce8714700da87fdf2706fc329dffebfcb2a32778448015b0281cbdf2ddf0813), finalized execution `ERROR`; primary status unchanged |
-| Correctly bound FAIL consumer rejects `R-2` | [`0xbd51e6…48a685`](https://explorer-studio.genlayer.com/tx/0xbd51e67280066331754548ae9edbba5cd4d4cc0b56c8b241afe307d64b448a685), finalized execution `ERROR`; negative consumer status stayed inactive |
-
-## Consensus diagnosis
-
-See [`CONSENSUS.md`](CONSENSUS.md). The old `MAJORITY_DISAGREE` was observed on the superseded registry, but the exact validator reasoning was not available from the required RPC. The debug methods tested returned `Method not found`. The exact-path equality failure was reproduced in controlled Direct Mode, so the correction is evidence-backed as a liveness fix without claiming unavailable validator reasoning. The final live equivalent evaluation finalized `MAJORITY_AGREE` and stored `VALID / RELATION_SATISFIED / PASS`.
-
-## CI and release state
-
-The final release commit and its completed workflow are recorded here. The earlier failed run `42853149930` was caused by the cross-platform raw line-ending hash check and is superseded by the corrected source gate.
-
-| Item | Result |
-| --- | --- |
-| Final GitHub Actions run | [42853778681 — success](https://github.com/ometere123/metamorph/actions/runs/42853778681) |
-| Contract source commit | `5f6d2e0`; deployed bytes and the final contract implementation are source-matched to this commit |
-| CI-verified release predecessor | [`a578ba332a159e6b08c833d7094a258ec0c4bc35`](https://github.com/ometere123/metamorph/commit/a578ba332a159e6b08c833d7094a258ec0c4bc35); the final evidence-only closeout commit is reported separately |
-| Submission scope | Contract-only; no frontend, backend, database, Docker or application wallet integration |
+GitHub Actions and the final commit URL are updated in the release report after
+the normal push.

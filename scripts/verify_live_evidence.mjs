@@ -13,6 +13,7 @@ const RPC = "https://studio.genlayer.com/api";
 const EXPECTED_CHAIN = "0xf22f";
 const EXPLORER = "https://explorer-studio.genlayer.com";
 const configArg = process.argv.find((arg) => arg.startsWith("--config="));
+const fullOutput = process.argv.includes("--full");
 const configPath = configArg ? path.resolve(ROOT, configArg.slice("--config=".length))
   : path.join(ROOT, "scripts", "live_evidence_config.json");
 
@@ -85,6 +86,35 @@ async function checkState(client, config) {
   }
 }
 
+function transactionSummary(tx) {
+  if (!tx) return null;
+  const leader = tx.consensus_data?.leader_receipt?.[0];
+  return {
+    hash: tx.hash,
+    from_address: tx.from_address,
+    to_address: tx.to_address,
+    status: tx.statusName ?? tx.status,
+    result: tx.resultName ?? tx.result,
+    tx_id: tx.tx_id,
+    created_timestamp: tx.created_timestamp,
+    contract_address: tx.data?.contract_address,
+    tx_execution_hash: tx.data?.tx_execution_hash,
+    leader_execution: leader?.execution_result,
+    validator_executions: (tx.consensus_data?.validators || []).map((item) => item.execution_result),
+  };
+}
+
+function receiptSummary(receipt) {
+  if (!receipt) return null;
+  return {
+    transactionHash: receipt.transactionHash,
+    blockHash: receipt.blockHash,
+    blockNumber: receipt.blockNumber,
+    status: receipt.status,
+    logs: Array.isArray(receipt.logs) ? receipt.logs.length : undefined,
+  };
+}
+
 async function checkSources(client) {
   const manifest = JSON.parse(await fs.readFile(path.join(ROOT, "SOURCE_SHA256_MANIFEST.json"), "utf8"));
   for (const [relative, entry] of Object.entries(manifest.files)) {
@@ -110,9 +140,15 @@ async function checkSources(client) {
 async function checkTransactions(config) {
   for (const hash of config.transactions || []) {
     const item = {hash, explorer: `${EXPLORER}/tx/${hash}`};
-    try { item.eth_transaction = await rpc("eth_getTransactionByHash", [hash]); }
+    try {
+      const transaction = await rpc("eth_getTransactionByHash", [hash]);
+      item.eth_transaction = fullOutput ? transaction : transactionSummary(transaction);
+    }
     catch (error) { item.eth_transaction_error = error.message; }
-    try { item.eth_receipt = await rpc("eth_getTransactionReceipt", [hash]); }
+    try {
+      const receipt = await rpc("eth_getTransactionReceipt", [hash]);
+      item.eth_receipt = fullOutput ? receipt : receiptSummary(receipt);
+    }
     catch (error) { item.eth_receipt_error = error.message; }
     item.indexed = Boolean(item.eth_transaction || item.eth_receipt);
     if (!item.indexed) warnings.push(`historical transaction not returned by required eth RPC: ${hash}`);
@@ -132,6 +168,7 @@ try {
 }
 
 output.ok = failures.length === 0;
+output.full_receipts = fullOutput;
 output.failures = failures;
 output.warnings = warnings;
 console.log(JSON.stringify(output, null, 2));

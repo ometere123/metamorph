@@ -1,12 +1,28 @@
 # Metamorph consensus design
 
-Metamorph uses GenLayer semantic consensus for one narrow question: does a frozen pair of input objects satisfy the frozen policy and the claimed metamorphic relation? It does not ask a model to decide whether a target is correct and it never gives the model the target's observed outputs as justification.
+Metamorph uses GenLayer semantic consensus for one bounded question: does a frozen pair of input objects satisfy the frozen policy and claimed metamorphic relation? It does not ask a model whether a target is correct, and it never gives target outputs to the semantic classifier as justification.
 
-## Execution boundary
+## Exact execution boundary
 
-`evaluate_case` constructs one bounded prompt from the frozen policy, case relation, transformation note and the two frozen input objects. The input objects are delimited as untrusted data. The leader calls `gl.nondet.exec_prompt(..., response_format="json")`; `gl.vm.run_nondet_unsafe` then gives the leader result to a validator. The validator independently calls the same semantic prompt and validates its own result before comparing the bounded semantic signature.
+`evaluate_case` first verifies the open run, tester, frozen suite, captured snapshot and target bindings. The snapshot is created deterministically from the registered target’s two public views before the nondeterministic block. The semantic prompt contains only:
 
-The accepted semantic schema is exact:
+- frozen policy;
+- claimed relation;
+- transformation note;
+- original and variant input objects;
+- snapshot digest.
+
+All policy, notes and input objects are delimited as untrusted data. They are not instructions. The target’s observed decisions and scores are absent from the semantic prompt.
+
+The leader executes:
+
+```python
+gl.nondet.exec_prompt(instruction, response_format="json")
+```
+
+The validator supplied to `gl.vm.run_nondet_unsafe` independently executes the same semantic task and validates its own result. It does not receive or trust the leader’s explanation, classification or evidence list.
+
+The accepted response is exactly:
 
 ```json
 {
@@ -16,31 +32,59 @@ The accepted semantic schema is exact:
 }
 ```
 
-The contract rejects extra or missing keys, unknown enums, contradictory reason codes, non-scalar or invented paths, duplicate paths, malformed JSON, oversized responses and unpaired original/variant path suffixes. Evidence paths are provenance for the independent semantic conclusion; they are not accepted as a substitute for semantic recomputation.
+The contract rejects missing/extra keys, invalid enums, contradictory reason codes, malformed JSON, duplicate evidence paths, nonexistent paths, non-scalar leaves, missing original or variant evidence, unpaired suffixes and oversized lists. Paths must include at least one paired scalar that actually changed. This prevents a leader from citing only unchanged fields while discussing a different transformation.
 
-The validator compares the leader and its independent conclusion on `relation` and `reason_code`. It does not require identical prose or identical path selection, because two independently reasoned validators can select different valid paired facts. Requiring the exact path list was the reproducible liveness defect in the earlier implementation: a valid equivalent transformation could be rejected when the models selected different but real paths. The correction preserves strict path validity and pairing while avoiding that unsafe overconstraint.
+The validator compares the substantive signature `(relation, reason_code)`. It does not require an identical path list or raw prose because independently reasoning models can select different, equally valid paired facts. Path lists remain independently bounded and validated; they are provenance, not a substitute for recomputation. Exact path-list equality was the reproduced liveness failure in the earlier implementation.
 
 ## Deterministic boundary
 
-Only `VALID` reaches the deterministic comparator. `INVALID` and `AMBIGUOUS` become `INCONCLUSIVE`; neither can manufacture a target failure or pass. For `VALID` cases the contract compares the two strictly validated target adapter outputs:
+Only `VALID` reaches the comparator. `INVALID` and `AMBIGUOUS` always produce `INCONCLUSIVE`; they cannot manufacture a target `FAIL`, `PASS` or certification.
 
-- `EQUIVALENT`: identical decision and absolute score delta within the frozen tolerance.
-- `STRENGTHENED`: decision rank and score do not decrease.
-- `WEAKENED`: decision rank and score do not increase.
+For a `VALID` case, deterministic code compares strict target adapter results:
 
-The target's output is constrained to the adapter schema and `score_bps` range `0..10000`. The model cannot write the final PASS/FAIL value.
+- `EQUIVALENT`: same decision and absolute score delta no greater than frozen tolerance.
+- `STRENGTHENED`: variant decision rank is not lower and score is not lower.
+- `WEAKENED`: variant decision rank is not higher and score is not higher.
 
-## Prompt-injection boundary
+Target decisions are ordered `DENY < REVIEW < ALLOW`; scores are integers `0..10000`. The model cannot write the case outcome. Run closure uses `FAIL` precedence, then `INCONCLUSIVE`, then all-`PASS`.
 
-Policy text, transformation notes, original inputs and variant inputs are untrusted case data. Strings such as “ignore previous instructions” remain data and are not executed. Strict bounds and schema checks are defense in depth; semantic safety still depends on independent validators correctly interpreting the frozen policy. The target's outputs are deliberately omitted from the semantic prompt to prevent outcome-driven rationalization.
+## Adversarial boundaries
 
-## Observed diagnosis and correction
+The Direct Mode suite uses controlled leader/validator responses to exercise substantive attacks, not only JSON shape:
 
-The first live registry deployment (now superseded) produced a finalized `MAJORITY_DISAGREE` on one equivalent-case evaluation. Available receipts showed successful leader/validator VM executions but did not expose the validators' semantic reasoning. The required debug RPC methods tested (`gen_dbg_traceTransaction`, `gen_getTransactionReceipt`, and `gen_getTransaction`) returned `Method not found`; therefore no exact validator conclusion is claimed.
+- a missing signed receipt hidden behind the same received day;
+- increased experience combined with a lost verification credential;
+- prompt injection in frozen policy/input text;
+- a malicious well-formed leader classification;
+- leader/validator disagreement;
+- fabricated, irrelevant, duplicate, missing and unpaired evidence paths;
+- invalid enums, mismatched reason codes, extra keys and truncated results.
 
-The diagnosis was treated as a hypothesis until controlled Direct Mode tests reproduced the failure mode: exact equality of evidence-path lists rejects a leader and validator that agree on relation/reason but choose different valid paired paths. The corrected source compares the substantive semantic signature and still rejects forged, nonexistent, crossed, duplicate or unpaired paths. A single corrected live equivalent case then finalized `MAJORITY_AGREE`, stored `VALID / RELATION_SATISFIED`, and produced deterministic `PASS` on the final registry. This is evidence that the correction removed the reproduced liveness problem; it is not a claim that the unavailable old validator traces proved one unique internal cause.
+The target’s observed outputs are not available to the semantic classifier in these tests. The policy activation suite separately checks exact current certification, typed target identity, authorized activation, denial and single-use downstream requests.
 
-## What is and is not proven
+## Observed diagnosis of the historical disagreement
 
-Direct Mode tests exercise the pinned GenVM runner with controlled mock model responses, including malicious leaders, disagreement, prompt injection and malformed outputs. They are not live validator identities. The final StudioNet receipts prove finalized network execution, leader/validator execution status and state consequences; the platform receipt does not expose private model reasoning. The live invalid suite provides an on-chain `INVALID / MATERIAL_DIFFERENCE` and `INCONCLUSIVE` result, while the defective fixture provides a live `VALID` semantic classification followed by deterministic `FAIL`.
+The previous registry had a live equivalent-case transaction that finalized `MAJORITY_DISAGREE`. The available receipt recorded execution status and vote metadata but did not expose private validator reasoning. Required debug methods tested against the StudioNet RPC (`gen_dbg_traceTransaction`, `gen_getTransactionReceipt`, and `gen_getTransaction`) were unavailable or returned `Method not found`. Therefore the receipt alone does not prove an `R`-versus-`M` mismatch, malformed output, adversarial uncertainty or a runtime cause.
 
+Controlled Direct Mode reproduced a concrete failure mode: a leader and validator could independently classify the same transformation with the same substantive relation/reason but select different valid evidence paths; exact path-list equality rejected that case. The safe correction removed only the brittle exact-list comparison, retained substantive relation/reason agreement and strengthened path validation by requiring a real changed scalar. It did not add leader trust or accept arbitrary higher-severity results.
+
+The new source was deployed as registry [`0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF`](https://explorer-studio.genlayer.com/address/0x5f31A604e9C3A9362A01A17c5be6b8a1440Db2dF). Its live equivalent, strengthened and weakened cases all finalized with `MAJORITY_AGREE`; `R-1` closed `PASS`, and the independent recheck `R-5` also closed `PASS`. This supports the correction’s liveness benefit but does not claim unavailable private validator reasoning from the old transaction.
+
+## Provenance categories
+
+| Claim | Establishment |
+| --- | --- |
+| Input pair, policy, case order and digest | Deterministic frozen registry state |
+| Target outputs | Registered target public views, strictly parsed; not off-chain truth |
+| Semantic relation/reason | Leader plus independent validator GenLayer consensus |
+| Evidence-path validity | Deterministic path resolution and changed-scalar checks in each execution |
+| PASS/FAIL/INCONCLUSIVE | Deterministic comparator and run-closure state machine |
+| Historical/current certification | Exact-bound registry views; currentness is target-manifest-version based |
+| Cross-contract activation | Typed IC-to-IC public views executed and read back on stable StudioNet |
+| Validator private reasoning | Not exposed by the required public receipt interface; not claimed |
+
+## Live ambiguity
+
+On the final registry, suite `S-4` intentionally stated that “acceptable” was undefined and did not define the relevance or direction of tone, experience, receipt, verification, day or identity. Its live run `R-4` returned `AMBIGUOUS / INSUFFICIENT_BASIS` for both cases, closed `INCONCLUSIVE`, and failed both historical and current certification. An activation consumer bound to `R-4` finalized with execution error and remained inactive.
+
+Direct Mode and live StudioNet evidence are separate layers. Direct Mode proves controlled runtime and adversarial state-machine behaviour; live receipts prove finalized network execution and canonical state consequences.
