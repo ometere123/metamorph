@@ -14,7 +14,11 @@ def main() -> int:
     failures = []
     for relative, entry in manifest["files"].items():
         path = ROOT / relative
-        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        # GitHub's Linux checkout is LF while the Windows deployment workspace
+        # can be CRLF. Verify the canonical Git source representation here;
+        # raw deployed-byte hashes are recorded separately in the manifest.
+        canonical = path.read_text(encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
+        actual = hashlib.sha256(canonical).hexdigest()
         expected = entry["sha256"].lower()
         if actual != expected:
             failures.append(f"{relative}: expected {expected}, got {actual}")

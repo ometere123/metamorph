@@ -6,18 +6,21 @@
   "rpc": "https://studio.genlayer.com/api",
   "files": {
     "contracts/metamorph.py": {
-      "sha256": "fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355",
+      "sha256": "48febe775104155aac5ded814db6e417be1646221a4d117f7683ac5e6106bf3e",
+      "deployed_sha256": "fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355",
       "deployed_addresses": ["0x4a7F6a372d3A686302d1c4f5f162386Ab85aFA8b"]
     },
     "contracts/fixture_target.py": {
-      "sha256": "ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906",
+      "sha256": "bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4",
+      "deployed_sha256": "ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906",
       "deployed_addresses": [
         "0xE763C5294ea266D2C17106fFd6d5136A6d607C22",
         "0x286345CcD4A86560e8F97D1Fe2bc140724cfA354"
       ]
     },
     "contracts/fixture_consumer.py": {
-      "sha256": "5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d",
+      "sha256": "e866cddd0fccbd6f0049c7c4bc45e308b4134337c7fa1e7dda7ed4c330dd766d",
+      "deployed_sha256": "5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d",
       "deployed_addresses": [
         "0x94312d8de2282485A939953E93De097FD2acf12e",
         "0x3EFCF9fb9Ce7946db998DA2ee28E026b85Cc440b"
@@ -25,8 +28,9 @@
     }
   },
   "verification": {
-    "method": "genlayer-js getContractCode over the required StudioNet RPC",
-    "result": "byte-for-byte equality for every listed deployment",
+    "method": "canonical Git-blob hashing in CI plus genlayer-js getContractCode over the required StudioNet RPC",
+    "result": "canonical source matches Git blobs; deployed raw bytes match the deployed_sha256 values byte-for-byte",
+    "line_endings": "Git/CI canonicalizes CRLF to LF; Windows deployment parity retains the raw deployed bytes",
     "checked": "2026-11-10"
   }
 }

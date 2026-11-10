@@ -50,11 +50,11 @@ The stable fixture returned manifest `{"schema":"metamorph.adapter/1","version":
 
 `genlayer-js getContractCode` over the required RPC returned exact byte-for-byte matches for every final deployment:
 
-| Source | SHA-256 | Retrieved bytes | Deployment(s) |
-| --- | --- | ---: | --- |
-| `contracts/metamorph.py` | `fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355` | 25,563 | final registry |
-| `contracts/fixture_target.py` | `ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906` | 1,639 | stable and defective fixtures |
-| `contracts/fixture_consumer.py` | `5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d` | 1,747 | both consumers |
+| Source | Git-blob SHA-256 | Deployed raw SHA-256 | Retrieved bytes | Deployment(s) |
+| --- | --- | --- | ---: | --- |
+| `contracts/metamorph.py` | `48febe775104155aac5ded814db6e417be1646221a4d117f7683ac5e6106bf3e` | `fbe31d0483ed2f331917c78dc78c9e38c26099649a539ee4cc3e73fada68e355` | 25,563 | final registry |
+| `contracts/fixture_target.py` | `bfa60b53a4750b27e71d65ff29d13e443f1fb4cf9449c704fe2edcc977bd61f4` | `ad4d29a90fa21ca561cb9a92be5da490bb6f5fe086b50015ab6f0e66a0343906` | 1,639 | stable and defective fixtures |
+| `contracts/fixture_consumer.py` | `e866cddd0fccbd6f0049c7c4bc45e308b4134337c7fa1e7dda7ed4c330dd766d` | `5c3dd7f2aab514d5668dfd8f6d9f24f17e28c44c079cb599bffaa6d2e05b424d` | 1,747 | both consumers |
 
 The manifest is [`SOURCE_SHA256_MANIFEST.json`](../SOURCE_SHA256_MANIFEST.json). Constructor configuration, not source bytes, distinguishes stable and defective fixture behaviour.
 
