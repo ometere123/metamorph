@@ -80,5 +80,4 @@ The policy target is an explicitly labelled reference integration rather than
 an independently developed third-party contract. One historical add_case write
 for C-5 is no longer indexed by the required RPC; the case, digest, snapshots,
 run and final state are readable, and the missing hash is not replaced by an
-unrelated transaction. The exact CI run for the final pushed commit is recorded
-in the repository release report after push.
+unrelated transaction. The release commit passed [GitHub Actions run 42914210086](https://github.com/ometere123/metamorph/actions/runs/42914210086).

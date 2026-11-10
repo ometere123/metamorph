@@ -143,6 +143,11 @@ Direct Mode uses one contract class per VM and therefore stubs cross-contract vi
 
 No 61997, `studionet-dev`, `studio-dev`, `studio-next` or global CLI was used.
 
+## Release
+
+Release commit: [6f98cea676b94e56d130c15d01d2116156fbabe3](https://github.com/ometere123/metamorph/commit/6f98cea676b94e56d130c15d01d2116156fbabe3).
+Its CI passed in [GitHub Actions run 42914210086](https://github.com/ometere123/metamorph/actions/runs/42914210086), including the read-only StudioNet evidence check.
+
 ## Documents
 
 - [`docs/CONSENSUS.md`](docs/CONSENSUS.md) — semantic consensus and adversarial boundary.

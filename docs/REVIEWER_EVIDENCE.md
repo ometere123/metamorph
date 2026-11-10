@@ -164,5 +164,6 @@ an unrelated hash. Use:
     npm run check:evidence
     npm run check:evidence -- --full
 
-GitHub Actions and the final commit URL are updated in the release report after
-the normal push.
+The release commit 6f98cea676b94e56d130c15d01d2116156fbabe3 passed [GitHub
+Actions run 42914210086](https://github.com/ometere123/metamorph/actions/runs/42914210086),
+including the read-only StudioNet evidence check.

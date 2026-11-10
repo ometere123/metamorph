@@ -160,3 +160,7 @@ indexes. One historical add_case write for C-5 was not recoverable as a
 transaction hash; the case, suite digest, run and final state are independently
 readable. This is recorded as an evidence limitation, not replaced with an
 unrelated hash.
+
+The release commit 6f98cea676b94e56d130c15d01d2116156fbabe3 was verified by
+[GitHub Actions run 42914210086](https://github.com/ometere123/metamorph/actions/runs/42914210086),
+which passed the complete CI workflow including the read-only evidence check.
