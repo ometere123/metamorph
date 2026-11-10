@@ -116,5 +116,5 @@ def test_repository_network_is_exactly_61999():
     root = CONTRACT.parents[1]
     network = json.loads((root / "network.json").read_text())
     package = json.loads((root / "package.json").read_text())
-    assert network == {"network":"studionet", "chainId":61999, "rpc":"https://studio.genlayer.com/api", "explorer":"https://genlayer-explorer.vercel.app"}
+    assert network == {"network":"studionet", "chainId":61999, "rpc":"https://studio.genlayer.com/api", "explorer":"https://explorer-studio.genlayer.com"}
     assert package["devDependencies"]["genlayer"] == "0.39.1"
